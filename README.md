@@ -48,6 +48,17 @@ RAG 기반 문서 이해 시스템을 구축하고자 합니다.
 
 ---
 
+# 🛠 Communication & Collaboration Tools
+
+| Tool | Description | Link |
+|---|---|---|
+| Notion | 프로젝트 문서 및 일정 관리 | https://www.notion.so/b432b0aa2cb2828ba6bd016c0ba6e0e1 |
+| Figma | 시스템 구조 및 아이디어 협업 | https://www.figma.com/board/R6X9kT6zLQerI6pxw5P3ia/1%ED%8C%80?node-id=0-1&p=f&t=gW77nPC7SN8GSwhr-0 |
+| Weights & Biases (W&B) | 실험 로그 및 성능 추적 | https://wandb.ai/csd1345- |
+| Google Docs | 회의록 및 문서 정리 | 추가 예정 |
+
+---
+
 # 📂 데이터셋
 
 본 프로젝트에서는 실제 기업 및 공공기관 제안요청서(RFP) 문서를 활용합니다.
