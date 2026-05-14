@@ -1,4 +1,4 @@
 [core]
     remote = myremote
 ['remote "myremote"']
-    url = gdrive://1-SKZDGKMYMIotkQQWVZWD-OURccs6pBU
+    url = gs://team1-rfp-bucket/dvc-store
