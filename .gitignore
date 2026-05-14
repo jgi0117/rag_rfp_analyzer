@@ -16,3 +16,4 @@ checkpoints/
 *.ckpt
 
 wandb/
+/data
