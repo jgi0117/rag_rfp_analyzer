@@ -1,0 +1,11 @@
+path:
+  data_list: "../data/data_list.csv"
+  file_dir: "../data/files"
+
+preprocessing:
+  chunk_size: 1200
+  chunk_overlap: 150
+  min_chunk_len: 30
+
+kiwi:
+  min_noun_len: 2
