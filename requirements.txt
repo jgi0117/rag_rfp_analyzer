@@ -17,6 +17,7 @@ pymupdf
 pypdf
 pdfplumber
 unstructured
+docling
 
 tiktoken
 streamlit
