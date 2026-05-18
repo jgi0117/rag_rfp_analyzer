@@ -18,6 +18,7 @@ pypdf
 pdfplumber
 unstructured
 docling
+pyhwp2
 
 tiktoken
 streamlit
