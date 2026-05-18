@@ -2,7 +2,7 @@
 Convert HWP files to PDF and copy existing PDF files.
 
 Default project flow:
-    data/files -> data/pdf -> data/parsed
+    data/raw/files -> data/raw_pdf -> data/parsed
 
 On Windows, HWP conversion uses the Hancom HWP COM object. On Linux, this
 script tries LibreOffice headless first, then an optional hwp5odt -> LibreOffice
@@ -11,7 +11,7 @@ fallback if hwp5odt is installed. Existing PDF files are copied as-is.
 Examples:
     python src/preprocessing/hwp_to_pdf.py
     python src/preprocessing/hwp_to_pdf.py --overwrite
-    python src/preprocessing/hwp_to_pdf.py --input-dir data/files --output-dir data/pdf
+    python src/preprocessing/hwp_to_pdf.py --input-dir data/raw/files --output-dir data/raw_pdf
 """
 
 from __future__ import annotations
@@ -28,8 +28,8 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_INPUT_DIR = PROJECT_ROOT / "data" / "files"
-DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "pdf"
+DEFAULT_INPUT_DIR = PROJECT_ROOT / "data" / "raw" / "files"
+DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "raw_pdf"
 
 
 @dataclass
@@ -43,8 +43,8 @@ class ConversionResult:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Convert .hwp files under data/files to PDF and copy existing .pdf "
-            "files into data/pdf. Other formats such as .docx are ignored."
+            "Convert .hwp files under data/raw/files to PDF and copy existing .pdf "
+            "files into data/raw_pdf. Other formats such as .docx are ignored."
         )
     )
     parser.add_argument(
