@@ -13,14 +13,8 @@ numpy
 tqdm
 pydantic
 
-pymupdf
-pypdf
-pdfplumber
-unstructured
+pymupdf4llm
 
 tiktoken
-streamlit
 
-ragas
-datasets
-evaluate
+dvc[gs]
