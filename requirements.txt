@@ -5,7 +5,7 @@ langchain
 langchain-openai
 langchain-community
 
-faiss-gpu
+faiss-cpu
 chromadb
 
 pandas
@@ -13,8 +13,6 @@ numpy
 tqdm
 pydantic
 
-pymupdf
-pypdf
 pymupdf4llm
 
 tiktoken
