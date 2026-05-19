@@ -13,17 +13,8 @@ numpy
 tqdm
 pydantic
 
-pymupdf
-pypdf
-pdfplumber
-unstructured
-docling
-pywin32; platform_system == "Windows"
-pyhwp2
+pymupdf4llm
 
 tiktoken
-streamlit
 
-ragas
-datasets
-evaluate
+dvc[gs]

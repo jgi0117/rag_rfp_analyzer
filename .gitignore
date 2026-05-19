@@ -17,3 +17,5 @@ checkpoints/
 
 wandb/
 /data
+venv/
+.venv/
