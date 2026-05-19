@@ -337,11 +337,7 @@ class HWPLoader:
 class PDFLoader:
     """
     PDF 원본 파일 텍스트 추출.
-
-    추출 전략:
-      1. pdfplumber (레이아웃 + 테이블 동시 추출)
-      2. pypdf      (폴백)
-      3. pytesseract OCR (스캔 PDF — 텍스트 30자 미만 페이지에 자동 적용)
+    개선 버전: poppler 미설치로 인한 에러 방지(Try-Except) 및 안전한 Fallback
     """
 
     def __init__(self, chunker: TextChunker):
@@ -367,25 +363,40 @@ class PDFLoader:
         try:
             import pytesseract
             from pdf2image import convert_from_path
+            # ★ 이 부분에서 poppler 에러가 발생하므로 내부적으로 한 번 더 방어합니다.
             imgs = convert_from_path(path, first_page=page_num, last_page=page_num)
             return pytesseract.image_to_string(imgs[0], lang="kor+eng") if imgs else ""
-        except ImportError:
-            logger.warning("pytesseract/pdf2image 미설치 -> OCR 건너뜀")
+        except Exception as e:
+            logger.warning(f"[PDF-OCR] OCR 실행 실패 (환경 미지원): {e}")
             return ""
 
     def load(self, path: str, meta: RFPMeta) -> list[DocumentChunk]:
         logger.info(f"[PDF] 파싱: {path}")
+        
+        # 1단계: 텍스트 추출 시도 (pdfplumber -> pypdf)
         try:
             pages, _ = self._pdfplumber(path)
-        except Exception:
-            pages, _ = self._pypdf(path)
+        except Exception as e:
+            logger.warning(f"[PDF] pdfplumber 실패, pypdf로 재시도: {e}")
+            try:
+                pages, _ = self._pypdf(path)
+            except Exception as e_critical:
+                logger.error(f"[PDF] 모든 텍스트 추출 엔진 실패: {path} | 에러: {e_critical}")
+                return [] # 텍스트 추출이 완전히 실패하면 빈 리스트 반환하여 전체 파이프라인 방어
 
         all_chunks: list[DocumentChunk] = []
         for i, text in enumerate(pages, start=1):
-            if len(text.strip()) < 30:          # 스캔 페이지 판단
-                text = self._ocr(path, i) or text
+            # 2단계: 스캔 페이지 판단 및 안전한 OCR 시도
+            if len(text.strip()) < 30:          
+                try:
+                    text = self._ocr(path, i) or text
+                except Exception as ocr_err:
+                    # ★ poppler 엔진 미설치로 인한 에러를 여기서 원천 차단합니다.
+                    logger.warning(f"[PDF] OCR 프로세스 에러 우회 (페이지 {i}): {ocr_err}")
+            
             if not text.strip():
                 continue
+                
             all_chunks.extend(
                 self.chunker.split(text, f"{meta.공고번호}_pdf_p{i}", "file_extract", meta)
             )
