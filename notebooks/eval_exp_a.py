@@ -5,11 +5,11 @@ import pandas as pd
 import numpy as np
 import yaml
 from langchain_community.vectorstores import Chroma
-from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings # 💡 로컬 임베딩 로드
 from dotenv import load_dotenv
 
 # =========================================================
-# 1. 환경 설정 및 DB 로드
+# 1. 환경 설정 및 시나리오 A DB 로드
 # =========================================================
 load_dotenv()
 
@@ -17,12 +17,15 @@ current_file_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in l
 project_root_dir = os.path.abspath(os.path.join(current_file_dir, ".."))
 sys.path.append(project_root_dir)
 
-if not os.environ.get("OPENAI_API_KEY"):
-    raise ValueError("🚨 OPENAI_API_KEY가 설정되지 않았습니다. .env 파일을 확인해 주세요.")
-
-embeddings_b = OpenAIEmbeddings(model="text-embedding-3-small")
-persist_db_b = os.path.join(project_root_dir, "chroma_db_scenario_b")
-vector_db_b = Chroma(persist_directory=persist_db_b, embedding_function=embeddings_b)
+# 💡 시나리오 A 전용 임베딩 및 디렉토리 설정으로 수정
+print("🚀 [시나리오 A] bge-m3 로컬 임베딩 모델 로드 중...")
+embeddings_a = HuggingFaceEmbeddings(
+    model_name="BAAI/bge-m3",
+    model_kwargs={'device': 'cuda'},
+    encode_kwargs={'normalize_embeddings': True}
+)
+persist_db_a = os.path.join(project_root_dir, "chroma_db_scenario_a")
+vector_db_a = Chroma(persist_directory=persist_db_a, embedding_function=embeddings_a)
 
 # =========================================================
 # 2. 질문답변 데이터셋 및 확정된 Ground Truth Chunk ID 로드
@@ -30,7 +33,6 @@ vector_db_b = Chroma(persist_directory=persist_db_b, embedding_function=embeddin
 csv_path = os.path.join(project_root_dir, "data", "eval_qa.csv")
 df_eval = pd.read_csv(csv_path)
 
-# 🎯 예원님이 도출해내신 질문 1~10번의 진짜 정답 Chunk ID 리스트 반영
 ground_truth_chunks = [
     [0],        # 1번 질문: 사업개요 및 기간
     [410],      # 2번 질문: 예산 집행/하도급 비율
@@ -48,28 +50,24 @@ ground_truth_chunks = [
 # 3. 정량적 평가 매트릭스 계산 수학 로직 함수
 # =========================================================
 def evaluate_retrieval(retrieved_ids, gt_ids, k=4):
-    """
-    하나의 질문에 대한 정량적 리트리벌 수치 계산
-    """
-    # 검색 결과 가중치 (이진 매칭: 관련 있으면 1, 없으면 0)
     rel = [1 if r_id in gt_ids else 0 for r_id in retrieved_ids[:k]]
     
-    # 1. Context Precision (순위 고려 정밀도)
+    # 1. Context Precision
     precisions = [sum(rel[:i+1]) / (i+1) for i in range(len(rel)) if rel[i] == 1]
     context_precision = np.mean(precisions) if precisions else 0.0
     
-    # 2. Context Recall (재현율)
+    # 2. Context Recall
     actual_hits = sum([1 for g_id in gt_ids if g_id in retrieved_ids[:k]])
     context_recall = actual_hits / len(gt_ids) if gt_ids else 0.0
     
-    # 3. MRR (Mean Reciprocal Rank)
+    # 3. MRR
     mrr = 0.0
     for rank, r in enumerate(rel):
         if r == 1:
             mrr = 1.0 / (rank + 1)
             break
             
-    # 4. nDCG (Normalized Discounted Cumulative Gain)
+    # 4. nDCG
     dcg = sum([r / np.log2(idx + 2) for idx, r in enumerate(rel)])
     idcg = sum([1.0 / np.log2(idx + 2) for idx in range(min(len(gt_ids), k))])
     ndcg = dcg / idcg if idcg > 0 else 0.0
@@ -80,18 +78,17 @@ def evaluate_retrieval(retrieved_ids, gt_ids, k=4):
 # 4. 평가 루프 가동 및 연산
 # =========================================================
 results = []
-print("🧪 [시나리오 B] RAG 리트리버 정량적 매트릭스 평가 시작 (Top-4)...")
+print("🧪 [시나리오 A] RAG 리트리버 정량적 매트릭스 평가 시작 (Top-4)...")
 
 for idx, row in df_eval.iterrows():
     q_num = row['번호']
     query = row['질문(question)']
     gt = ground_truth_chunks[idx]
     
-    # 실제 검색 수행
-    retrieved_docs = vector_db_b.similarity_search(query, k=4)
+    # 💡 실제 검색을 vector_db_a에서 수행하도록 수정
+    retrieved_docs = vector_db_a.similarity_search(query, k=4)
     retrieved_ids = [doc.metadata['chunk_id'] for doc in retrieved_docs]
     
-    # 스코어 채점
     c_prec, c_rec, mrr, ndcg = evaluate_retrieval(retrieved_ids, gt, k=4)
     
     results.append({
@@ -109,11 +106,15 @@ for idx, row in df_eval.iterrows():
 # 5. 리포트 마크다운 포맷팅 출력 및 결과 보존
 # =========================================================
 df_report = pd.DataFrame(results)
-print("\n📊 [500자 고정 크기 청킹 + OpenAI text-embedding-3-small 실험 리포트]")
+print("\n📊 [500자 고정 크기 청킹 + BAAI/bge-m3 로컬 실험 리포트]")
 print(df_report.to_markdown(index=False))
 
-print("\n🏆 [시나리오 B 평균 최종 결과 스코어]")
+print("\n🏆 [시나리오 A 평균 최종 결과 스코어]")
 print(f"🔹 Mean Context Precision : {df_report['Precision'].mean():.4f}")
 print(f"🔹 Mean Context Recall    : {df_report['Recall'].mean():.4f}")
 print(f"🔹 Mean MRR               : {df_report['MRR'].mean():.4f}")
 print(f"🔹 Mean nDCG              : {df_report['nDCG'].mean():.4f}")
+
+output_csv = os.path.join(project_root_dir, "data", "scenario_a_eval_results.csv")
+df_report.to_csv(output_csv, index=False, encoding='utf-8-sig')
+print(f"\n💾 성적서 파일이 성공적으로 보존되었습니다: '{output_csv}'")

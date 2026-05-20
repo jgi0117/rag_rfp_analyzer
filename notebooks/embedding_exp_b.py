@@ -63,6 +63,7 @@ documents = [
 # =========================================================
 # 5. [시나리오 B 실험] .env 보안 키 로드 및 OpenAI 임베딩 DB 구축
 # =========================================================
+"""
 load_dotenv()
 if not os.environ.get("OPENAI_API_KEY"):
     raise ValueError("🚨 OPENAI_API_KEY가 설정되지 않았습니다. .env 파일을 확인해 주세요.")
@@ -80,11 +81,13 @@ vector_db_b = Chroma.from_documents(
     persist_directory=persist_db_b
 )
 print(f"✅ [시나리오 B] 벡터 DB 구축 및 저장 완료! (소요 시간: {time.time() - start_db:.2f}초)")
+"""
 
 
 # =========================================================
 # 6. 간단한 검색 테스트 검증
 # =========================================================
+"""
 query = "서울캠퍼스와 세종캠퍼스의 교직원 현황 및 전임교원 수는 어떻게 되나요?"
 print(f"\n🔍 [시나리오 B 테스트] 질문: '{query}'")
 retrieved_docs_b = vector_db_b.similarity_search(query, k=2)
@@ -95,12 +98,14 @@ for idx, doc in enumerate(retrieved_docs_b):
     print(doc.page_content)
     print("-" * 50)
 
+"""
+
 
 # =========================================================
 # 7. [시나리오 A 실험] 로컬 HuggingFace 기반 벡터 DB 구축
 # =========================================================
 # 시나리오 B가 완전히 성공하면 아래 삼중 따옴표 주석을 풀고 실행해 보세요.
-"""
+
 from langchain_huggingface import HuggingFaceEmbeddings
 
 print("\n📥 로컬 HuggingFace 임베딩 모델 연결 중...")
@@ -119,4 +124,3 @@ vector_db_a = Chroma.from_documents(
     persist_directory=persist_db_a
 )
 print(f"✅ [시나리오 A] 벡터 DB 구축 및 저장 완료! (소요 시간: {time.time() - start_db_a:.2f}초)")
-"""
