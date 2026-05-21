@@ -31,6 +31,18 @@ config_path = os.path.join(project_root_dir, "config.yaml")
 with open(config_path, 'r', encoding='utf-8') as f:
     config = yaml.safe_load(f)
 
+
+def resolve_project_path(path_value: str) -> str:
+    """Resolve config paths relative to the project root."""
+    path_value = os.path.expanduser(path_value)
+    if os.path.isabs(path_value):
+        return path_value
+
+    parts = path_value.replace("\\", "/").split("/")
+    if parts and parts[0] == os.path.basename(project_root_dir):
+        path_value = "/".join(parts[1:])
+    return os.path.join(project_root_dir, path_value)
+
 # 💡 config.yaml을 직접 수정하셨더라도, 혹시 모를 오차를 방지하기 위해 
 # 내 실험 조건(500자, 오버랩 0)을 코드 상에서 한 번 더 확실하게 고정해 줍니다.
 config['preprocessing']['chunk_size'] = 500
@@ -42,15 +54,8 @@ print(f"⚙️ config.yaml 로드 완료! (실험 조건 -> Chunk Size: {config[
 # =========================================================
 # 3. 데이터 로드 및 고정 크기 청킹 가동
 # =========================================================
-default_markdown_path = os.path.join(
-    project_root_dir,
-    "data",
-    "parsed",
-    "docling",
-    "markdown",
-    "고려대학교_차세대 포털·학사 정보시스템 구축사업.md",
-)
-markdown_path = os.environ.get("RAG_MARKDOWN_PATH", default_markdown_path)
+default_markdown_path = resolve_project_path(config["path"]["markdown_file"])
+markdown_path = resolve_project_path(os.environ.get("RAG_MARKDOWN_PATH", default_markdown_path))
 
 if os.path.exists(markdown_path):
     print(f"📄 저장된 Markdown 로드: {markdown_path}")
@@ -59,8 +64,7 @@ if os.path.exists(markdown_path):
 else:
     # Markdown이 없을 때만 PDF를 다시 파싱합니다.
     print(f"⚠️ Markdown 파일을 찾지 못해 PDF에서 다시 추출합니다: {markdown_path}")
-    yaml_file_dir = config['path']['file_dir'].replace("../", "") # "data/files" 형식으로 정제
-    filepath = os.path.join(project_root_dir, yaml_file_dir, "고려대학교_차세대 포털·학사 정보시스템 구축사업.pdf")
+    filepath = resolve_project_path(config["path"]["raw_pdf_file"])
     md_text = extract_pdf(filepath, pages=None)
 
 cleaner = RFPTextCleaner(config=config)

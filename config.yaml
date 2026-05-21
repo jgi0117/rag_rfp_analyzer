@@ -1,0 +1,37 @@
+project:
+  name: rag_rfp_analyzer
+  target_document: "고려대학교_차세대 포털·학사 정보시스템 구축사업"
+
+path:
+  # Raw source files used as a fallback when parsed markdown is unavailable.
+  file_dir: "data/raw/files"
+  raw_pdf_file: "data/raw/files/고려대학교_차세대 포털·학사 정보시스템 구축사업.pdf"
+
+  # Parsed markdown input for RAG indexing.
+  markdown_dir: "data/parsed/markdown"
+  markdown_file: "data/parsed/markdown/고려대학교_차세대 포털·학사 정보시스템 구축사업.md"
+
+preprocessing:
+  chunk_size: 500
+  chunk_overlap: 0
+  splitter: fixed_size
+
+embedding:
+  provider: openai
+  model: text-embedding-3-small
+
+retrieval:
+  vector_store: chroma
+  persist_directory: "chroma_db_scenario_b"
+  top_k: 3
+
+generation:
+  provider: openai
+  model: gpt-4o-mini
+  temperature: 0
+
+output:
+  evaluation_dir: "outputs/evaluation"
+  generation_results: "outputs/evaluation/scenario_b_generation_results.csv"
+  generation_eval_results: "outputs/evaluation/scenario_b_generation_eval_results.csv"
+  generation_eval_summary: "outputs/evaluation/scenario_b_generation_eval_summary.csv"
