@@ -1,25 +1,30 @@
-import os
 import sys
+import os
 import time
-
-import pandas as pd
 import yaml
-from dotenv import load_dotenv
-from langchain_community.vectorstores import Chroma
+import pandas as pd
 from langchain_core.documents import Document
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings # 💡 OpenAI 임베딩 컴포넌트
+from langchain_community.vectorstores import Chroma
+from dotenv import load_dotenv
 
 load_dotenv()
-
-current_file_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in locals() else "."
+current_file_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else '.'
 project_root_dir = os.path.abspath(os.path.join(current_file_dir, ".."))
 sys.path.append(project_root_dir)
 
-from src.evaluation.generation import evaluate_generation_dataframe, summarize_by_strategy
-from src.evaluation.retrieval import make_default_ground_truth_dataframe
 from src.preprocessing.loader import extract_pdf
+from src.evaluation.retrieval import (
+    evaluate_retrieval_dataframe,
+    make_default_ground_truth_dataframe,
+    summarize_retrieval,
+)
 
+# 1. 데이터 로드 및 마크다운 텍스트 추출
+config_path = os.path.join(project_root_dir, "config.yaml")
+with open(config_path, 'r', encoding='utf-8') as f:
+    config = yaml.safe_load(f)
 
 def resolve_project_path(path_value: str) -> str:
     """Resolve config paths relative to the project root."""
@@ -32,37 +37,24 @@ def resolve_project_path(path_value: str) -> str:
         path_value = "/".join(parts[1:])
     return os.path.join(project_root_dir, path_value)
 
-
-config_path = os.path.join(project_root_dir, "config.yaml")
-with open(config_path, "r", encoding="utf-8") as f:
-    config = yaml.safe_load(f)
-
-if not os.environ.get("OPENAI_API_KEY"):
-    raise ValueError("OPENAI_API_KEY is not set. Check your .env file.")
-
 default_markdown_path = resolve_project_path(config["path"]["markdown_file"])
 markdown_path = resolve_project_path(os.environ.get("RAG_MARKDOWN_PATH", default_markdown_path))
 
 if os.path.exists(markdown_path):
-    print(f"Loaded parsed markdown: {markdown_path}")
+    print(f"📄 저장된 Markdown 로드: {markdown_path}")
     with open(markdown_path, "r", encoding="utf-8-sig") as f:
         md_text = f.read()
 else:
+    print(f"⚠️ Markdown 파일을 찾지 못해 PDF에서 다시 추출합니다: {markdown_path}")
     filepath = resolve_project_path(config["path"]["raw_pdf_file"])
-    print(f"Markdown not found. Extracting PDF instead: {filepath}")
     md_text = extract_pdf(filepath, pages=None)
 
-
+# 2. 제안서 포맷 맞춤형 계층 구조(Header) 분할 + 2차 안전 청킹
 headers_to_split_on = [("#", "Header_1"), ("##", "Header_2"), ("###", "Header_3")]
 header_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
 semantic_chunks = header_splitter.split_text(md_text)
 
-semantic_chunk_size = int(os.environ.get("RAG_SEMANTIC_CHUNK_SIZE", "1000"))
-semantic_chunk_overlap = int(os.environ.get("RAG_SEMANTIC_CHUNK_OVERLAP", "100"))
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=semantic_chunk_size,
-    chunk_overlap=semantic_chunk_overlap,
-)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
 
 final_documents = []
 chunk_idx = 0
@@ -70,121 +62,70 @@ for chunk in semantic_chunks:
     splitted_texts = text_splitter.split_text(chunk.page_content)
     for text in splitted_texts:
         meta = {
-            "source": f"{config['project']['target_document']}_semantic_b",
+            "source": "고려대학교_RFP_의미단위_B",
             "chunk_id": int(chunk_idx),
             "h1": chunk.metadata.get("Header_1", ""),
             "h2": chunk.metadata.get("Header_2", ""),
-            "h3": chunk.metadata.get("Header_3", ""),
+            "h3": chunk.metadata.get("Header_3", "")
         }
         final_documents.append(Document(page_content=text, metadata=meta))
         chunk_idx += 1
 
-print(f"[semantic_b] Created {len(final_documents)} chunks.")
+print(f"📊 [시나리오-의미단위-B] 최종 생성된 총 청크 수: {len(final_documents)}개")
 
+# 3. OpenAI text-embedding-3-small 벡터 DB 구축
+print("\n📥 [시나리오-의미단위-B] OpenAI Embedding API 로드 중...")
+embeddings_b = OpenAIEmbeddings(model="text-embedding-3-small")
 
-embedding_model_name = os.environ.get(
-    "RAG_EMBEDDING_MODEL",
-    config.get("embedding", {}).get("model", "text-embedding-3-small"),
-)
-persist_db_semantic_b = resolve_project_path(
-    os.environ.get("RAG_SEMANTIC_PERSIST_DIR", "chroma_db_semantic_b")
-)
+persist_db_semantic_b = os.path.join(project_root_dir, "chroma_db_semantic_b")
+if os.path.exists(persist_db_semantic_b):
+    import shutil
+    shutil.rmtree(persist_db_semantic_b)
 
-print(f"[semantic_b] Building Chroma DB with OpenAI embeddings: {embedding_model_name}")
-embeddings_b = OpenAIEmbeddings(model=embedding_model_name)
-
-start_db = time.time()
+start_time = time.time()
 vector_db_semantic_b = Chroma.from_documents(
     documents=final_documents,
     embedding=embeddings_b,
-    persist_directory=persist_db_semantic_b,
+    persist_directory=persist_db_semantic_b
 )
-print(f"[semantic_b] Vector DB saved: {persist_db_semantic_b} ({time.time() - start_db:.2f}s)")
+print(f"✅ [시나리오-의미단위-B] 벡터 DB 구축 완료! (소요 시간: {time.time() - start_time:.2f}초)")
 
-
-generation_model_name = os.environ.get(
-    "RAG_GENERATION_MODEL",
-    config.get("generation", {}).get("model", "gpt-4o-mini"),
-)
-retrieval_k = int(os.environ.get("RAG_RETRIEVAL_K", config.get("retrieval", {}).get("top_k", 3)))
-strategy_name = (
-    f"semantic_b_openai_{semantic_chunk_size}_overlap_{semantic_chunk_overlap}"
-)
-
-print(
-    f"[semantic_b] Generating answers "
-    f"(model={generation_model_name}, retrieval_k={retrieval_k})"
-)
-llm = ChatOpenAI(model=generation_model_name, temperature=0)
-
-
-def generate_answer(question: str, retrieved_docs: list[Document]) -> str:
-    retrieved_context = "\n\n".join(
-        f"[Context {idx + 1}]\n{doc.page_content}"
-        for idx, doc in enumerate(retrieved_docs)
-    )
-    prompt = f"""
-You are a Korean RFP question-answering assistant.
-Answer in Korean, using only the retrieved context below.
-If the context does not contain enough evidence, say that you do not know.
-
-[Question]
-{question}
-
-[Retrieved context]
-{retrieved_context}
-
-[Answer]
-""".strip()
-    return llm.invoke(prompt).content.strip()
-
+# 4. retrieval 평가 코드 연결
+retrieval_k = int(os.environ.get("RAG_RETRIEVAL_K", str(config.get("retrieval", {}).get("top_k", 3))))
+strategy_name = "scenario_semantic_b_openai_header_1000_overlap_100"
 
 ground_truth_df = make_default_ground_truth_dataframe()
-generation_rows = []
+retrieval_rows = []
 
-start_eval = time.time()
 for _, row in ground_truth_df.iterrows():
     question = row["question"]
-    ground_truth = row["ground_truth"]
-
-    print(f"[semantic_b] Retrieving and answering question {row['question_id']}...")
     retrieved_docs = vector_db_semantic_b.similarity_search(question, k=retrieval_k)
-    retrieved_context = "\n\n---\n\n".join(doc.page_content for doc in retrieved_docs)
-    retrieved_chunk_ids = ", ".join(
-        str(doc.metadata.get("chunk_id", "")) for doc in retrieved_docs
-    )
-    generated_answer = generate_answer(question, retrieved_docs)
-
-    generation_rows.append(
+    retrieval_rows.append(
         {
             "strategy": strategy_name,
             "question_id": row["question_id"],
             "question": question,
-            "ground_truth_answer": ground_truth,
-            "retrieved_context": retrieved_context,
-            "retrieved_chunk_ids": retrieved_chunk_ids,
-            "generated_answer": generated_answer,
+            "ground_truth": row["ground_truth"],
+            "retrieved_contexts": [doc.page_content for doc in retrieved_docs],
+            "retrieved_chunk_ids": ", ".join(str(doc.metadata.get("chunk_id", "")) for doc in retrieved_docs),
         }
     )
 
-generation_df = pd.DataFrame(generation_rows)
-evaluated_df = evaluate_generation_dataframe(generation_df)
-summary_df = summarize_by_strategy(evaluated_df)
+retrieval_df = pd.DataFrame(retrieval_rows)
+evaluated_df = evaluate_retrieval_dataframe(retrieval_df)
+summary_df = summarize_retrieval(evaluated_df)
 
-output_dir = resolve_project_path(config.get("output", {}).get("evaluation_dir", "outputs/evaluation"))
+output_dir = os.path.join(project_root_dir, "outputs", "evaluation")
 os.makedirs(output_dir, exist_ok=True)
 
-generation_output_path = os.path.join(output_dir, "semantic_b_generation_results.csv")
-evaluation_output_path = os.path.join(output_dir, "semantic_b_generation_eval_results.csv")
-summary_output_path = os.path.join(output_dir, "semantic_b_generation_eval_summary.csv")
+retrieval_output_path = os.path.join(output_dir, "scenario_semantic_b_retrieval_eval_results.csv")
+summary_output_path = os.path.join(output_dir, "scenario_semantic_b_retrieval_eval_summary.csv")
 
-generation_df.to_csv(generation_output_path, index=False, encoding="utf-8-sig")
-evaluated_df.to_csv(evaluation_output_path, index=False, encoding="utf-8-sig")
+evaluated_df.to_csv(retrieval_output_path, index=False, encoding="utf-8-sig")
 summary_df.to_csv(summary_output_path, index=False, encoding="utf-8-sig")
 
-print("[semantic_b] Generation and evaluation complete.")
-print(f"Generation results: {generation_output_path}")
-print(f"Evaluation results: {evaluation_output_path}")
-print(f"Summary results: {summary_output_path}")
-print(f"Evaluation elapsed: {time.time() - start_eval:.2f}s")
+print("\n✅ [시나리오-의미단위-B] retrieval 평가 완료!")
+print(f"📊 평가 결과 저장: {retrieval_output_path}")
+print(f"📈 요약 결과 저장: {summary_output_path}")
+print("\n[retrieval 평가 요약]")
 print(summary_df.to_string(index=False))
