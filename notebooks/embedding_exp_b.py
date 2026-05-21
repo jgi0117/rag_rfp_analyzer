@@ -97,31 +97,3 @@ for idx, doc in enumerate(retrieved_docs_b):
     print(f"🌟 [검색된 청크 {idx+1}] (원본 Chunk ID: {doc.metadata['chunk_id']})")
     print(doc.page_content)
     print("-" * 50)
-
-
-
-
-# =========================================================
-# 7. [시나리오 A 실험] 로컬 HuggingFace 기반 벡터 DB 구축
-# =========================================================
-# 시나리오 B가 완전히 성공하면 아래 삼중 따옴표 주석을 풀고 실행해 보세요.
-"""
-from langchain_huggingface import HuggingFaceEmbeddings
-
-print("\n📥 로컬 HuggingFace 임베딩 모델 연결 중...")
-embeddings_a = HuggingFaceEmbeddings(
-    model_name="BAAI/bge-m3",
-    model_kwargs={'device': 'cuda'}, # GPU 환경이 아니면 'cpu'로 자동 할당되거나 변경 필요
-    encode_kwargs={'normalize_embeddings': True}
-)
-
-persist_db_a = os.path.join(project_root_dir, "chroma_db_scenario_a")
-
-start_db_a = time.time()
-vector_db_a = Chroma.from_documents(
-    documents=documents,
-    embedding=embeddings_a,
-    persist_directory=persist_db_a
-)
-print(f"✅ [시나리오 A] 벡터 DB 구축 및 저장 완료! (소요 시간: {time.time() - start_db_a:.2f}초)")
-"""
