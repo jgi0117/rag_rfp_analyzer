@@ -3,6 +3,9 @@ project:
   target_document: "고려대학교_차세대 포털·학사 정보시스템 구축사업"
 
 path:
+  # Metadata list for multi-file RFP evaluation.
+  metadata_file: "rag_rfp_analyzer/data/data_list.csv"
+
   # Raw source files used as a fallback when parsed markdown is unavailable.
   file_dir: "data/raw/files"
   raw_pdf_file: "data/raw/files/고려대학교_차세대 포털·학사 정보시스템 구축사업.pdf"
