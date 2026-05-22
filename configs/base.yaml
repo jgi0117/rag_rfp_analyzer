@@ -9,20 +9,3 @@ path:
   pdf_pages:
   image_dir: "outputs/images"
   write_images: false
-
-preprocessing:
-  chunk_size: 500
-  chunk_overlap: 0
-  min_chunk_len: 10
-
-embedding:
-  provider: openai
-  model: text-embedding-3-small
-
-retrieval:
-  vector_store: chroma
-  top_k: 3
-  sample_query: "서울캠퍼스와 세종캠퍼스의 교직원 현황 및 전임교원 수는 어떻게 되나요?"
-
-output:
-  evaluation_dir: "outputs/evaluation"
