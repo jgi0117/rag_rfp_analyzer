@@ -14,9 +14,9 @@ project_root_dir = os.path.abspath(os.path.join(current_file_dir, ".."))
 sys.path.append(project_root_dir)
 
 from src.evaluation.generation import evaluate_generation_dataframe, summarize_by_strategy
+from src.evaluation.ground_truth import make_ground_truth_dataframe
 from src.evaluation.retrieval import (
     evaluate_retrieval_dataframe,
-    make_default_ground_truth_dataframe,
     summarize_retrieval,
 )
 
@@ -55,6 +55,13 @@ def load_config(config_path: str) -> dict:
     return deep_merge(base_config, experiment_config)
 
 
+def get_document_ids(config: dict) -> list[str]:
+    documents = config.get("documents")
+    if documents:
+        return [document["document_id"] for document in documents]
+    return ["korea_portal"]
+
+
 # 본 스크립트는 embedding 단계에서 생성된 Chroma DB를 로드해 Generation 통합 평가를 수행합니다.
 parser = argparse.ArgumentParser(description="Reference generation evaluation experiment")
 parser.add_argument("--config", default="configs/experiments/reference.yaml")
@@ -91,16 +98,19 @@ print(f"Vector DB loaded: {persist_db_b}")
 retrieval_k = int(os.environ.get("RAG_RETRIEVAL_K", str(config["retrieval"].get("top_k", 4))))
 strategy_name = config["output"]["strategy_name"]
 
-ground_truth_df = make_default_ground_truth_dataframe()
+ground_truth_df = make_ground_truth_dataframe(get_document_ids(config))
 retrieval_rows = []
 
 for _, row in ground_truth_df.iterrows():
     question = row["question"]
-    retrieved_docs = vector_db_b.similarity_search(question, k=retrieval_k)
+    document_filter = {"document_id": row["document_id"]}
+    retrieved_docs = vector_db_b.similarity_search(question, k=retrieval_k, filter=document_filter)
     retrieved_ranked_chunks = [
         {
             "rank": rank,
+            "document_id": doc.metadata.get("document_id", ""),
             "chunk_id": doc.metadata.get("chunk_id", ""),
+            "local_chunk_id": doc.metadata.get("local_chunk_id", ""),
             "source": doc.metadata.get("source", ""),
             "chunk_text": doc.page_content,
         }
@@ -109,6 +119,8 @@ for _, row in ground_truth_df.iterrows():
     retrieval_rows.append(
         {
             "strategy": strategy_name,
+            "document_id": row["document_id"],
+            "document_name": row["document_name"],
             "question_id": row["question_id"],
             "question": question,
             "ground_truth": row["ground_truth"],

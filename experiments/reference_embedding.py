@@ -17,9 +17,9 @@ sys.path.append(project_root_dir)
 
 from src.evaluation.retrieval import (
     evaluate_retrieval_dataframe,
-    make_default_ground_truth_dataframe,
     summarize_retrieval,
 )
+from src.evaluation.ground_truth import make_ground_truth_dataframe
 from src.preprocessing.cleaner import RFPTextCleaner
 from src.preprocessing.loader import extract_pdf
 
@@ -58,6 +58,44 @@ def load_config(config_path: str) -> dict:
     return deep_merge(base_config, experiment_config)
 
 
+def get_document_configs(config: dict) -> list[dict]:
+    documents = config.get("documents")
+    if documents:
+        return documents
+
+    return [
+        {
+            "document_id": "korea_portal",
+            "target_document": config["project"]["target_document"],
+            "raw_pdf_file": config["path"]["raw_pdf_file"],
+            "pdf_pages": config["path"].get("pdf_pages"),
+        }
+    ]
+
+
+def resolve_document_pdf_path(config: dict, document_config: dict) -> str:
+    raw_pdf_file = document_config.get("raw_pdf_file")
+    if raw_pdf_file:
+        return resolve_project_path(raw_pdf_file)
+
+    file_name = document_config.get("file_name")
+    if not file_name:
+        raise KeyError("Each document must define either raw_pdf_file or file_name.")
+
+    file_dir = resolve_project_path(config["path"]["file_dir"])
+    return os.path.join(file_dir, file_name)
+
+
+def run_chunking(cleaner: RFPTextCleaner, splitter: str, md_text: str, project_name: str) -> list[str]:
+    if splitter == "fixed_size":
+        return cleaner.run_fixed_size_chunking(md_text, project_name=project_name)
+    if splitter == "markdown":
+        return cleaner.run_markdown_chunking(md_text, project_name=project_name)
+    if splitter == "semantic":
+        return cleaner.run_semantic_chunking([md_text], project_name=project_name)
+    raise ValueError(f"Unknown splitter: {splitter}")
+
+
 parser = argparse.ArgumentParser(description="Reference embedding experiment")
 parser.add_argument("--config", default="configs/experiments/reference.yaml")
 args = parser.parse_args()
@@ -70,52 +108,53 @@ print(
     f"overlap: {config['preprocessing']['chunk_overlap']})"
 )
 
-pdf_path = resolve_project_path(config["path"]["raw_pdf_file"])
-if not os.path.exists(pdf_path):
-    raise FileNotFoundError(f"PDF file not found: {pdf_path}")
-
-md_text = extract_pdf(
-    pdf_path,
-    pages=config["path"].get("pdf_pages"),
-    image_path=resolve_project_path(config["path"].get("image_dir", "outputs/images")),
-    write_images=config["path"].get("write_images", False),
-)
-
-project_name = config["project"]["target_document"]
 cleaner = RFPTextCleaner(config=config)
 splitter = config["preprocessing"]["splitter"]
+document_configs = get_document_configs(config)
+documents = []
+chunk_records = []
 
-if splitter == "fixed_size":
-    chunks = cleaner.run_fixed_size_chunking(md_text, project_name=project_name)
-elif splitter == "markdown":
-    chunks = cleaner.run_markdown_chunking(md_text, project_name=project_name)
-elif splitter == "semantic":
-    chunks = cleaner.run_semantic_chunking([md_text], project_name=project_name)
-else:
-    raise ValueError(f"Unknown splitter: {splitter}")
+for document_config in document_configs:
+    document_id = document_config["document_id"]
+    project_name = document_config["target_document"]
+    pdf_path = resolve_document_pdf_path(config, document_config)
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"PDF file not found: {pdf_path}")
 
-print(f"Total chunks: {len(chunks)}")
+    md_text = extract_pdf(
+        pdf_path,
+        pages=document_config.get("pdf_pages", config["path"].get("pdf_pages")),
+        image_path=resolve_project_path(config["path"].get("image_dir", "outputs/images")),
+        write_images=config["path"].get("write_images", False),
+    )
 
-documents = [
-    Document(page_content=chunk, metadata={"source": project_name, "chunk_id": i})
-    for i, chunk in enumerate(chunks)
-]
+    chunks = run_chunking(cleaner, splitter, md_text, project_name)
+    print(f"Total chunks ({document_id}): {len(chunks)}")
+
+    for local_chunk_id, chunk in enumerate(chunks):
+        global_chunk_id = len(documents)
+        metadata = {
+            "document_id": document_id,
+            "source": project_name,
+            "source_file": pdf_path,
+            "chunk_id": global_chunk_id,
+            "local_chunk_id": local_chunk_id,
+        }
+        documents.append(Document(page_content=chunk, metadata=metadata))
+        chunk_records.append(
+            {
+                **metadata,
+                "chunking_strategy": splitter,
+                "chunk_length": len(chunk),
+                "chunk_text": chunk,
+            }
+        )
+
+print(f"Total chunks: {len(documents)}")
 
 chunk_output_path = resolve_project_path(config["output"]["chunk_results"])
 os.makedirs(os.path.dirname(chunk_output_path), exist_ok=True)
-chunk_df = pd.DataFrame(
-    [
-        {
-            "chunk_id": doc.metadata["chunk_id"],
-            "source": doc.metadata["source"],
-            "source_file": pdf_path,
-            "chunking_strategy": config["preprocessing"]["splitter"],
-            "chunk_length": len(doc.page_content),
-            "chunk_text": doc.page_content,
-        }
-        for doc in documents
-    ]
-)
+chunk_df = pd.DataFrame(chunk_records)
 chunk_df.to_csv(chunk_output_path, index=False, encoding="utf-8-sig")
 print(f"Chunking result saved: {chunk_output_path}")
 
@@ -136,7 +175,12 @@ print(f"Vector DB built and saved ({time.time() - start_db:.2f}s): {persist_db_b
 
 query = config["retrieval"]["sample_query"]
 print(f"\n[Scenario B test] Question: '{query}'")
-retrieved_docs_b = vector_db_b.similarity_search(query, k=2)
+sample_document_id = config["retrieval"].get("sample_document_id", document_configs[0]["document_id"])
+retrieved_docs_b = vector_db_b.similarity_search(
+    query,
+    k=2,
+    filter={"document_id": sample_document_id},
+)
 
 print("=" * 50)
 for idx, doc in enumerate(retrieved_docs_b):
@@ -147,16 +191,21 @@ for idx, doc in enumerate(retrieved_docs_b):
 retrieval_k = int(os.environ.get("RAG_RETRIEVAL_K", str(config["retrieval"].get("top_k", 3))))
 strategy_name = config["output"]["strategy_name"]
 
-ground_truth_df = make_default_ground_truth_dataframe()
+ground_truth_df = make_ground_truth_dataframe(
+    [document_config["document_id"] for document_config in document_configs]
+)
 retrieval_rows = []
 
 for _, row in ground_truth_df.iterrows():
     question = row["question"]
-    retrieved_docs = vector_db_b.similarity_search(question, k=retrieval_k)
+    document_filter = {"document_id": row["document_id"]}
+    retrieved_docs = vector_db_b.similarity_search(question, k=retrieval_k, filter=document_filter)
     retrieved_ranked_chunks = [
         {
             "rank": rank,
+            "document_id": doc.metadata.get("document_id", ""),
             "chunk_id": doc.metadata.get("chunk_id", ""),
+            "local_chunk_id": doc.metadata.get("local_chunk_id", ""),
             "source": doc.metadata.get("source", ""),
             "chunk_text": doc.page_content,
         }
@@ -165,6 +214,8 @@ for _, row in ground_truth_df.iterrows():
     retrieval_rows.append(
         {
             "strategy": strategy_name,
+            "document_id": row["document_id"],
+            "document_name": row["document_name"],
             "question_id": row["question_id"],
             "question": question,
             "ground_truth": row["ground_truth"],

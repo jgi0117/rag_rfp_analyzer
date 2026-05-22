@@ -1,4 +1,4 @@
-"""
+﻿"""
 RAG 검색 결과를 평가하기 위한 검색 평가 지표 모음.
 
 평가 지표:
@@ -29,61 +29,13 @@ import json
 import math
 import re
 from collections import Counter
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 
-DEFAULT_GROUND_TRUTH_ROWS = [
-    {
-        "question_id": 1,
-        "question": "고려대학교 차세대 포털·학사 정보시스템 구축 사업의 총 사업예산(V.A.T 포함)과 계약일로부터의 사업 기간은 각각 어떻게 명시되어 있나요?",
-        "ground_truth": "총 사업예산은 부가가치세 포함 11,270,000,000원이며 사업 기간은 계약일로부터 24개월 이내입니다.",
-    },
-    {
-        "question_id": 2,
-        "question": "본 사업의 예산 집행 계획 중 2025학년도에 지급될 예정인 사업비의 비율은 전체의 몇 퍼센트인가요?",
-        "ground_truth": "2025학년도에는 전체 사업예산의 약 40%를 분할 지급할 예정입니다.",
-    },
-    {
-        "question_id": 3,
-        "question": "성능요구사항(PER-005)에 명시된 기준에 따라 수강신청 시스템과 같이 특정 시간에 사용자가 폭증하는 시스템의 경우 보장해야 하는 최소 동시 사용자 수는 얼마인가요?",
-        "ground_truth": "수강신청 시스템 등 트래픽 폭증 시스템의 경우 동시 사용자 15,000명 이상을 지원해야 합니다.",
-    },
-    {
-        "question_id": 4,
-        "question": "성능요구사항인 온라인성 업무응답시간(PER-002)과 웹페이지 디스플레이시간(PER-003)에서 목표로 하는 처리 시간은 각각 요청 후 몇 초 이내인가요?",
-        "ground_truth": "모든 질의에 대한 결과 처리 및 웹페이지의 완전한 출력은 사용자가 요청한 시간으로부터 3초 내에 완료되어야 합니다.",
-    },
-    {
-        "question_id": 5,
-        "question": "상세 요구사항 분류기준에 따른 본 사업의 총 요구사항 수와 그 중 가장 많은 비중을 차지하는 기능요구사항(SFR)의 개수는 각각 얼마인가요?",
-        "ground_truth": "본 사업의 총 요구사항 수는 160개이며 이 중 기능요구사항(SFR)은 99개입니다.",
-    },
-    {
-        "question_id": 6,
-        "question": "기능요구사항 ID SFR-포털-009 지능형 검색에서 사용자 의도와 요구에 맞게 도입해야 하는 4가지 핵심 검색 방식은 무엇인가요?",
-        "ground_truth": "의미기반 검색, 개인화 검색 / 추천 검색, 유사문장 검색, 다국어 검색의 4가지 방식을 도입해야 합니다.",
-    },
-    {
-        "question_id": 7,
-        "question": "제안 평가 방식 중 기술평가와 가격평가의 배점 비율은 각각 어떻게 구성되며 기술평가 항목 중 기술 및 기능 부문에 배정된 점수는 몇 점인가요?",
-        "ground_truth": "기술평가 90%와 가격평가 10%로 구성되며 기술평가 항목 중 기술 및 기능 부문에는 30점이 배정되어 있습니다.",
-    },
-    {
-        "question_id": 8,
-        "question": "표준요구사항 STR-001에 따라 웹 호환성 및 접근성 준수를 위해 만족해야 하는 보안 가이드의 기준 연도와 최종 제출해야 하는 산출물 보고서의 명칭은 무엇인가요?",
-        "ground_truth": "행정안전부의 소프트웨어 개발보안 가이드(2021.11) 기준을 만족해야 하며 웹 접근성 결과 보고서를 제출해야 합니다.",
-    },
-    {
-        "question_id": 9,
-        "question": "기능요구사항 SFR-학사-013 수강소감관리에서 강의 개선을 위해 관리자가 작성해야 하는 보고서 명칭과 해당 기능에서 종합적으로 조회해야 하는 4가지 이력 항목은 무엇인가요?",
-        "ground_truth": "강의개선보고서(CQI)를 작성해야 하며 CQI보고서 내용, 수강소감설문 사후조치 내용, 강의평가 이력, 역량수준 이력을 종합 조회해야 합니다.",
-    },
-    {
-        "question_id": 10,
-        "question": "기능요구사항 SFR-모바일-001에 명시된 지침에 따라 기존 모바일 통합앱인 호잇에서 흡수하여 재구축해야 하는 주요 기능 5가지를 기술하세요.",
-        "ground_truth": "검색, 교내연락처, 푸시, 일정, 유니버스가 포함되며 이 외에도 식단, 교통서비스 등을 흡수하여 재구축해야 합니다.",
-    },
-]
+from src.evaluation.ground_truth import KOREA_PORTAL_ROWS
+
+
+DEFAULT_GROUND_TRUTH_ROWS = KOREA_PORTAL_ROWS
 
 STOPWORDS = {
     "은",
@@ -383,10 +335,25 @@ def summarize_retrieval(
     return evaluated_df[metric_cols].mean(numeric_only=True).round(4).to_frame("mean").T
 
 
-def make_default_ground_truth_dataframe():
+def make_default_ground_truth_dataframe(document_ids: Optional[Iterable[str]] = None):
+    """기본 ground truth DataFrame을 반환한다.
+
+    `document_ids`를 넘기지 않으면 기존 호환성을 위해 고려대 단일 문서 질문만 반환한다.
+    여러 문서 평가가 필요하면 `document_ids`를 넘겨 `ground_truth.py`의 문서별 registry를 사용한다.
+    """
     import pandas as pd
 
+    if document_ids is not None:
+        from src.evaluation.ground_truth import make_ground_truth_dataframe
+
+        return make_ground_truth_dataframe(document_ids)
+
     return pd.DataFrame(DEFAULT_GROUND_TRUTH_ROWS)
+
+
+def make_multi_document_ground_truth_dataframe(document_ids: Iterable[str]):
+    """여러 문서의 ground truth를 문서 ID 기준으로 합쳐 반환한다."""
+    return make_default_ground_truth_dataframe(document_ids)
 
 
 def _load_input(path: str, sheet: Any = 0):
@@ -415,10 +382,22 @@ def main() -> int:
         default=None,
         help="내장 ground truth 10개를 CSV로 저장할 경로",
     )
+    parser.add_argument(
+        "--ground-truth-documents",
+        default=None,
+        help="저장할 ground truth 문서 ID 목록. 예: korea_portal,ulsan_bis_2024",
+    )
     args = parser.parse_args()
 
     if args.write_default_gt:
-        gt_df = make_default_ground_truth_dataframe()
+        document_ids = None
+        if args.ground_truth_documents:
+            document_ids = [
+                document_id.strip()
+                for document_id in args.ground_truth_documents.split(",")
+                if document_id.strip()
+            ]
+        gt_df = make_default_ground_truth_dataframe(document_ids)
         gt_df.to_csv(args.write_default_gt, index=False, encoding="utf-8-sig")
         print("기본 ground truth 저장 완료:", args.write_default_gt)
 
@@ -443,3 +422,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

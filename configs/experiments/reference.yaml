@@ -14,7 +14,8 @@ retrieval:
   vector_store: chroma
   top_k: 4
   sample_query: "서울캠퍼스와 세종캠퍼스의 교직원 현황 및 전임교원 수는 어떻게 되나요?"
-  persist_directory: "outputs/db/reference_fixed_600_100_top4_openai_small"
+  sample_document_id: korea_portal
+  persist_directory: "outputs/db/reference_fixed_600_100_top4_openai_small_multidoc2"
 
 generation:
   provider: openai
@@ -23,9 +24,9 @@ generation:
 
 output:
   evaluation_dir: "outputs/evaluation"
-  strategy_name: "reference_fixed_600_100_top4_openai_small"
-  chunk_results: "outputs/chunks/reference_fixed_600_100_top4_openai_small_chunks.csv"
-  retrieval_eval_results: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_results.csv"
-  retrieval_eval_summary: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_summary.csv"
-  generation_eval_results: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_gpt4o_mini_generation_results.csv"
-  generation_eval_summary: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_gpt4o_mini_generation_summary.csv"
+  strategy_name: "reference_fixed_600_100_top4_openai_small_multidoc2"
+  chunk_results: "outputs/chunks/reference_fixed_600_100_top4_openai_small_multidoc2_chunks.csv"
+  retrieval_eval_results: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_multidoc2_results.csv"
+  retrieval_eval_summary: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_multidoc2_summary.csv"
+  generation_eval_results: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_multidoc2_gpt4o_mini_generation_results.csv"
+  generation_eval_summary: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_multidoc2_gpt4o_mini_generation_summary.csv"
