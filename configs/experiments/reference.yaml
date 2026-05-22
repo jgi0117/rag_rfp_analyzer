@@ -22,25 +22,11 @@ generation:
   model: gpt-4o-mini
   temperature: 0.0
 
-generation:
-  provider: openai
-  model: gpt-4o-mini
-  temperature: 0.0
-
 output:
   evaluation_dir: "outputs/evaluation"
-<<<<<<< HEAD
   strategy_name: "reference_fixed_600_100_top4_openai_small_multidoc5"
   chunk_results: "outputs/chunks/reference_fixed_600_100_top4_openai_small_multidoc5_chunks.csv"
   retrieval_eval_results: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_multidoc5_results.csv"
   retrieval_eval_summary: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_multidoc5_summary.csv"
   generation_eval_results: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_multidoc5_gpt4o_mini_generation_results.csv"
   generation_eval_summary: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_multidoc5_gpt4o_mini_generation_summary.csv"
-=======
-  strategy_name: "reference_fixed_600_100_top4_openai_small"
-  chunk_results: "outputs/chunks/reference_fixed_600_100_top4_openai_small_chunks.csv"
-  retrieval_eval_results: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_results.csv"
-  retrieval_eval_summary: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_summary.csv"
-  generation_eval_results: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_gpt4o_mini_generation_results.csv"
-  generation_eval_summary: "outputs/evaluation/reference_fixed_600_100_top4_openai_small_gpt4o_mini_generation_summary.csv"
->>>>>>> cbe264c3704818f49534a5aec84b9e1b07560bce
