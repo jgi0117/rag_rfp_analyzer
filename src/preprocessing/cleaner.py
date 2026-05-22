@@ -43,6 +43,64 @@ class RFPTextCleaner:
         final_results = [f"[{project_name}] {chunk}" for chunk in raw_chunks]
         return final_results
 
+    def _split_with_overlap(self, text, size, overlap):
+        if size <= 0:
+            return [text]
+
+        step = max(size - overlap, 1)
+        return [text[i:i + size] for i in range(0, len(text), step)]
+
+    def _split_markdown_sections(self, markdown_text):
+        sections = []
+        current_title = ""
+        current_lines = []
+        header_stack = []
+
+        for line in markdown_text.splitlines():
+            header_match = re.match(r"^(#{1,6})\s+(.+?)\s*$", line)
+            if header_match:
+                if current_lines:
+                    sections.append((current_title, "\n".join(current_lines)))
+                    current_lines = []
+
+                level = len(header_match.group(1))
+                title = header_match.group(2).strip()
+                header_stack = header_stack[:level - 1]
+                header_stack.append(title)
+                current_title = " > ".join(header_stack)
+                current_lines.append(line)
+            else:
+                current_lines.append(line)
+
+        if current_lines:
+            sections.append((current_title, "\n".join(current_lines)))
+
+        return sections
+
+    def run_markdown_chunking(self, markdown_text, project_name="Unknown project"):
+        """
+        Split Markdown by heading sections, then split long sections by chunk_size.
+        """
+        min_len = self.config['preprocessing'].get('min_chunk_len', 10)
+        size = self.config['preprocessing']['chunk_size']
+        overlap = self.config['preprocessing'].get('chunk_overlap', 0)
+
+        final_results = []
+        for section_title, section_text in self._split_markdown_sections(markdown_text):
+            cleaned = self.clean_text(section_text)
+            if len(cleaned) < min_len:
+                continue
+
+            section_prefix = f"[{project_name}]"
+            if section_title:
+                section_prefix = f"{section_prefix} [{section_title}]"
+
+            for chunk in self._split_with_overlap(cleaned, size, overlap):
+                if len(chunk) >= min_len:
+                    final_results.append(f"{section_prefix} {chunk}")
+
+        return final_results
+
     def run_semantic_chunking(self, base_chunks):
         """기존 청크를 의미 단위로 재분할 및 사업명 주입"""
         final_results = []

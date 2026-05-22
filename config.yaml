@@ -26,6 +26,7 @@ embedding:
 retrieval:
   vector_store: chroma
   persist_directory: "chroma_db_scenario_b"
+  markdown_persist_directory: "chroma_db_markdown_scenario_b"
   top_k: 3
 
 generation:
@@ -35,6 +36,12 @@ generation:
 
 output:
   evaluation_dir: "outputs/evaluation"
+  chunk_results: "outputs/chunks/scenario_b_chunks.csv"
+  retrieval_eval_results: "outputs/evaluation/scenario_b_retrieval_eval_results.csv"
+  retrieval_eval_summary: "outputs/evaluation/scenario_b_retrieval_eval_summary.csv"
+  markdown_chunk_results: "outputs/chunks/scenario_b_markdown_chunks.csv"
+  markdown_retrieval_eval_results: "outputs/evaluation/scenario_b_markdown_retrieval_eval_results.csv"
+  markdown_retrieval_eval_summary: "outputs/evaluation/scenario_b_markdown_retrieval_eval_summary.csv"
   generation_results: "outputs/evaluation/scenario_b_generation_results.csv"
   generation_eval_results: "outputs/evaluation/scenario_b_generation_eval_results.csv"
   generation_eval_summary: "outputs/evaluation/scenario_b_generation_eval_summary.csv"
