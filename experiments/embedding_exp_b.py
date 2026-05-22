@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import sys
@@ -10,9 +11,6 @@ from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 
-# =========================================================
-# 1. Path setup and module imports
-# =========================================================
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 project_root_dir = os.path.abspath(os.path.join(current_file_dir, ".."))
 sys.path.append(project_root_dir)
@@ -30,34 +28,48 @@ def resolve_project_path(path_value: str) -> str:
     path_value = os.path.expanduser(path_value)
     if os.path.isabs(path_value):
         return path_value
-
-    parts = path_value.replace("\\", "/").split("/")
-    if parts and parts[0] == os.path.basename(project_root_dir):
-        path_value = "/".join(parts[1:])
     return os.path.join(project_root_dir, path_value)
 
 
-# =========================================================
-# 2. Load config and pin experiment parameters
-# =========================================================
-config_path = os.path.join(project_root_dir, "config.yaml")
+def deep_merge(base: dict, override: dict) -> dict:
+    merged = dict(base)
+    for key, value in override.items():
+        if key == "base_config":
+            continue
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
 
-with open(config_path, "r", encoding="utf-8") as f:
-    config = yaml.safe_load(f)
 
-config["preprocessing"]["chunk_size"] = 500
-config["preprocessing"]["chunk_overlap"] = 0
+def load_config(config_path: str) -> dict:
+    config_path = resolve_project_path(config_path)
+    with open(config_path, "r", encoding="utf-8") as f:
+        experiment_config = yaml.safe_load(f)
 
+    base_config_path = experiment_config.get("base_config")
+    if not base_config_path:
+        return experiment_config
+
+    with open(resolve_project_path(base_config_path), "r", encoding="utf-8") as f:
+        base_config = yaml.safe_load(f)
+
+    return deep_merge(base_config, experiment_config)
+
+
+parser = argparse.ArgumentParser(description="Scenario B fixed-size embedding experiment")
+parser.add_argument("--config", default="configs/experiments/fixed_b.yaml")
+args = parser.parse_args()
+
+config = load_config(args.config)
 print(
-    "config.yaml loaded "
-    f"(Chunk Size: {config['preprocessing']['chunk_size']}, "
-    f"Overlap: {config['preprocessing']['chunk_overlap']})"
+    "config loaded "
+    f"(splitter: {config['preprocessing']['splitter']}, "
+    f"chunk_size: {config['preprocessing']['chunk_size']}, "
+    f"overlap: {config['preprocessing']['chunk_overlap']})"
 )
 
-
-# =========================================================
-# 3. Load PDF as Markdown, then run Markdown chunking
-# =========================================================
 pdf_path = resolve_project_path(config["path"]["raw_pdf_file"])
 if not os.path.exists(pdf_path):
     raise FileNotFoundError(f"PDF file not found: {pdf_path}")
@@ -71,33 +83,23 @@ md_text = extract_pdf(
 
 project_name = config["project"]["target_document"]
 cleaner = RFPTextCleaner(config=config)
-markdown_chunks = cleaner.run_markdown_chunking(md_text, project_name=project_name)
-print(f"Total markdown chunks: {len(markdown_chunks)}")
+chunks = cleaner.run_fixed_size_chunking(md_text, project_name=project_name)
+print(f"Total chunks: {len(chunks)}")
 
-
-# =========================================================
-# 4. Save chunks and wrap as LangChain Documents
-# =========================================================
 documents = [
     Document(page_content=chunk, metadata={"source": project_name, "chunk_id": i})
-    for i, chunk in enumerate(markdown_chunks)
+    for i, chunk in enumerate(chunks)
 ]
 
-chunk_output_path = resolve_project_path(
-    config["output"].get(
-        "markdown_chunk_results",
-        "outputs/chunks/scenario_b_markdown_chunks.csv",
-    )
-)
+chunk_output_path = resolve_project_path(config["output"]["chunk_results"])
 os.makedirs(os.path.dirname(chunk_output_path), exist_ok=True)
-
 chunk_df = pd.DataFrame(
     [
         {
             "chunk_id": doc.metadata["chunk_id"],
             "source": doc.metadata["source"],
             "source_file": pdf_path,
-            "chunking_strategy": "markdown",
+            "chunking_strategy": config["preprocessing"]["splitter"],
             "chunk_length": len(doc.page_content),
             "chunk_text": doc.page_content,
         }
@@ -107,20 +109,12 @@ chunk_df = pd.DataFrame(
 chunk_df.to_csv(chunk_output_path, index=False, encoding="utf-8-sig")
 print(f"Chunking result saved: {chunk_output_path}")
 
-
-# =========================================================
-# 5. OpenAI embeddings and Chroma DB
-# =========================================================
 load_dotenv()
 if not os.environ.get("OPENAI_API_KEY"):
     raise ValueError("OPENAI_API_KEY is not set. Please check your .env file.")
 
-print("Connecting OpenAI embedding model...")
 embeddings_b = OpenAIEmbeddings(model=config["embedding"]["model"])
-
-persist_db_b = resolve_project_path(
-    config["retrieval"].get("markdown_persist_directory", "chroma_db_markdown_scenario_b")
-)
+persist_db_b = resolve_project_path(config["retrieval"]["persist_directory"])
 
 start_db = time.time()
 vector_db_b = Chroma.from_documents(
@@ -128,17 +122,10 @@ vector_db_b = Chroma.from_documents(
     embedding=embeddings_b,
     persist_directory=persist_db_b,
 )
-print(f"[Scenario B Markdown] Vector DB built and saved ({time.time() - start_db:.2f}s)")
+print(f"Vector DB built and saved ({time.time() - start_db:.2f}s): {persist_db_b}")
 
-
-# =========================================================
-# 6. Simple retrieval smoke test
-# =========================================================
-query = config["retrieval"].get(
-    "sample_query",
-    "서울캠퍼스와 세종캠퍼스의 교직원 현황 및 전임교원 수는 어떻게 되나요?",
-)
-print(f"\n[Scenario B Markdown test] Question: '{query}'")
+query = config["retrieval"]["sample_query"]
+print(f"\n[Scenario B test] Question: '{query}'")
 retrieved_docs_b = vector_db_b.similarity_search(query, k=2)
 
 print("=" * 50)
@@ -147,12 +134,8 @@ for idx, doc in enumerate(retrieved_docs_b):
     print(doc.page_content)
     print("-" * 50)
 
-
-# =========================================================
-# 7. Retrieval evaluation
-# =========================================================
 retrieval_k = int(os.environ.get("RAG_RETRIEVAL_K", str(config["retrieval"].get("top_k", 3))))
-strategy_name = "scenario_b_openai_markdown_500_overlap_0"
+strategy_name = config["output"]["strategy_name"]
 
 ground_truth_df = make_default_ground_truth_dataframe()
 retrieval_rows = []
@@ -179,10 +162,7 @@ for _, row in ground_truth_df.iterrows():
             "retrieved_chunk_ids": ", ".join(
                 str(doc.metadata.get("chunk_id", "")) for doc in retrieved_docs
             ),
-            "retrieved_ranked_chunks": json.dumps(
-                retrieved_ranked_chunks,
-                ensure_ascii=False,
-            ),
+            "retrieved_ranked_chunks": json.dumps(retrieved_ranked_chunks, ensure_ascii=False),
         }
     )
 
@@ -190,28 +170,15 @@ retrieval_df = pd.DataFrame(retrieval_rows)
 evaluated_df = evaluate_retrieval_dataframe(retrieval_df)
 summary_df = summarize_retrieval(evaluated_df)
 
-output_dir = resolve_project_path(config["output"]["evaluation_dir"])
-os.makedirs(output_dir, exist_ok=True)
-
-retrieval_output_path = resolve_project_path(
-    config["output"].get(
-        "markdown_retrieval_eval_results",
-        os.path.join(output_dir, "scenario_b_markdown_retrieval_eval_results.csv"),
-    )
-)
-summary_output_path = resolve_project_path(
-    config["output"].get(
-        "markdown_retrieval_eval_summary",
-        os.path.join(output_dir, "scenario_b_markdown_retrieval_eval_summary.csv"),
-    )
-)
+retrieval_output_path = resolve_project_path(config["output"]["retrieval_eval_results"])
+summary_output_path = resolve_project_path(config["output"]["retrieval_eval_summary"])
 os.makedirs(os.path.dirname(retrieval_output_path), exist_ok=True)
 os.makedirs(os.path.dirname(summary_output_path), exist_ok=True)
 
 evaluated_df.to_csv(retrieval_output_path, index=False, encoding="utf-8-sig")
 summary_df.to_csv(summary_output_path, index=False, encoding="utf-8-sig")
 
-print("\n[Scenario B Markdown] retrieval evaluation complete")
+print("\n[Scenario B] retrieval evaluation complete")
 print(f"Evaluation saved: {retrieval_output_path}")
 print(f"Summary saved: {summary_output_path}")
 print("\n[Retrieval evaluation summary]")

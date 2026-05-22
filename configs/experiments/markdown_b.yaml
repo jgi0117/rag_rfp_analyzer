@@ -1,0 +1,15 @@
+base_config: "configs/base.yaml"
+
+preprocessing:
+  splitter: markdown
+  chunk_size: 500
+  chunk_overlap: 0
+
+retrieval:
+  persist_directory: "outputs/db/chroma_db_markdown_scenario_b"
+
+output:
+  strategy_name: "scenario_b_openai_markdown_500_overlap_0"
+  chunk_results: "outputs/chunks/scenario_b_markdown_chunks.csv"
+  retrieval_eval_results: "outputs/evaluation/scenario_b_markdown_retrieval_eval_results.csv"
+  retrieval_eval_summary: "outputs/evaluation/scenario_b_markdown_retrieval_eval_summary.csv"

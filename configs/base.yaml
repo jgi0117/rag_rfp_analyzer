@@ -1,0 +1,28 @@
+project:
+  name: rag_rfp_analyzer
+  target_document: "고려대학교_차세대 포털·학사 정보시스템 구축사업"
+
+path:
+  metadata_file: "data/data_list.csv"
+  file_dir: "data/raw_pdf"
+  raw_pdf_file: "data/raw_pdf/고려대학교_차세대 포털·학사 정보시스템 구축사업.pdf"
+  pdf_pages:
+  image_dir: "outputs/images"
+  write_images: false
+
+preprocessing:
+  chunk_size: 500
+  chunk_overlap: 0
+  min_chunk_len: 10
+
+embedding:
+  provider: openai
+  model: text-embedding-3-small
+
+retrieval:
+  vector_store: chroma
+  top_k: 3
+  sample_query: "서울캠퍼스와 세종캠퍼스의 교직원 현황 및 전임교원 수는 어떻게 되나요?"
+
+output:
+  evaluation_dir: "outputs/evaluation"
