@@ -12,6 +12,7 @@ pandas
 numpy
 tqdm
 pydantic
+PyYAML
 
 pymupdf4llm
 
