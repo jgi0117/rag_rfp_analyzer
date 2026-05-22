@@ -16,3 +16,6 @@ checkpoints/
 
 wandb/
 .env
+
+# Vector DB paths
+chroma_db_*/

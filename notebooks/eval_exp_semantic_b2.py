@@ -9,13 +9,24 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from dotenv import load_dotenv
 
-# 1. 절대 경로 정비 및 팀원 평가 모듈 임포트
+# =========================================================
+# 1. 경로 설정 및 팀원 모듈 임포트 (경로 에러 완벽 방어 버전)
+# =========================================================
+# 현재 실행 중인 파일(eval_exp_semantic_b2.py)의 절대 경로를 먼저 잡습니다.
 current_file_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else '.'
-project_root_dir = os.path.abspath(os.path.join(current_file_dir, "..")) if os.path.basename(os.path.abspath(current_file_dir)) == 'src' else os.path.abspath(current_file_dir)
-sys.path.append(project_root_dir)
 
+# 만약 현재 폴더 이름이 'notebooks'라면, 한 단계 상위 폴더를 루트로 잡고, 아니라면 현재 폴더를 루트로 잡습니다.
+if os.path.basename(current_file_dir) == 'notebooks':
+    project_root_dir = os.path.abspath(os.path.join(current_file_dir, ".."))
+else:
+    project_root_dir = os.path.abspath(current_file_dir)
+
+# 파이썬 최상위 탐색 경로에 프로젝트 루트 리스트를 가장 먼저(0번 인덱스) 찔러 넣습니다.
+if project_root_dir not in sys.path:
+    sys.path.insert(0, project_root_dir)
+
+# 이제 안정적으로 src 패키지와 팀원의 evaluation 모듈을 불러옵니다.
 from src.preprocessing.loader import extract_pdf
-# 🌟 팀원 브랜치에서 가져온 src/evaluation/retrieval.py 모듈로부터 함수 바인딩
 from src.evaluation.retrieval import (
     make_default_ground_truth_dataframe, 
     evaluate_retrieval_dataframe, 
@@ -24,7 +35,9 @@ from src.evaluation.retrieval import (
 
 load_dotenv()
 
+# =========================================================
 # 2. 예원님의 마크다운 기반 의미 단위 청킹 및 벡터 DB 구축
+# =========================================================
 config_path = os.path.join(project_root_dir, "config.yaml")
 with open(config_path, 'r', encoding='utf-8') as f:
     config = yaml.safe_load(f)
@@ -38,8 +51,8 @@ header_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_spli
 semantic_chunks = header_splitter.split_text(md_text)
 
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500, 
-    chunk_overlap=50,
+    chunk_size=600, 
+    chunk_overlap=100,
     length_function=len,
     separators=["\n\n", "\n", " ", ""]
 )
@@ -77,7 +90,9 @@ vector_db = Chroma.from_documents(
 print("✅ 벡터 DB 재구축 완료!")
 
 
+# =========================================================
 # 3. 팀원 평가 표준 템플릿(10개 문항) 기반 실시간 검색 및 본문 매핑
+# =========================================================
 print("\n🧪 [통합 평가] 팀원 표준 템플릿 기반 실시간 Retrieval 구동...")
 eval_df = make_default_ground_truth_dataframe() 
 
@@ -86,7 +101,6 @@ for idx, row in eval_df.iterrows():
     query = row['question']
     retrieved_docs = vector_db.similarity_search(query, k=4)
     
-    # 팀원의 Token Overlap 기반 채점 방식에 맞게 검색된 청크의 원문(page_content) 리스트 전달
     contexts_list = [doc.page_content for doc in retrieved_docs]
     retrieved_results.append(contexts_list)
 
@@ -94,13 +108,15 @@ eval_df['retrieved_contexts'] = retrieved_results
 eval_df['strategy'] = "마크다운 기반 의미 단위 Chunking"
 
 
+# =========================================================
 # 4. 종합 점수 일괄 계산 및 리포트 출력
+# =========================================================
 report_df = evaluate_retrieval_dataframe(
     eval_df,
     question_col="question",
     ground_truth_col="ground_truth",
     contexts_col="retrieved_contexts",
-    relevance_threshold=0.2, # 팀원 코드 default값 유지
+    relevance_threshold=0.2, 
     ndcg_k=4
 )
 
