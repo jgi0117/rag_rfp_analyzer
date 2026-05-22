@@ -138,6 +138,11 @@ generator_llm = ChatOpenAI(
     temperature=config["generation"].get("temperature", 0.0),
 )
 
+
+def call_llm(prompt: str) -> str:
+    response = generator_llm.invoke(prompt)
+    return response.content if hasattr(response, "content") else str(response)
+
 # 검색 컨텍스트 정보를 취합하여 실제 모델 답변을 생성합니다.
 for _, row in evaluated_df.iterrows():
     question = row["question"]
@@ -148,7 +153,7 @@ for _, row in evaluated_df.iterrows():
         "문맥에 없는 내용이거나 확인 불가능한 정보라면 솔직하게 '문맥상 확인할 수 없습니다'라고 답하세요.\n\n"
         f"[문맥]:\n{joined_contexts}\n\n[질문]:\n{question}"
     )
-    llm_answer = generator_llm.predict(qa_prompt)
+    llm_answer = call_llm(qa_prompt)
     generated_answers.append(llm_answer)
 
 # 공통 평가지표 함수 입력을 위한 필수 컬럼 정제
@@ -158,7 +163,7 @@ evaluated_df["retrieved_context"] = evaluated_df["retrieved_contexts"].apply(lam
 
 # 3. src/evaluation/generation.py 내 공통 인터페이스 호출
 def openai_judge_fn(prompt: str) -> str:
-    return generator_llm.predict(prompt)
+    return call_llm(prompt)
 
 
 final_generation_df = evaluate_generation_dataframe(
