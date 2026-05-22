@@ -1,19 +1,22 @@
 project:
   name: rag_rfp_analyzer
-  target_document: "고려대_차세대포털"
+  target_document: "고려대학교_차세대 포털·학사 정보시스템 구축사업"
 
 path:
-  metadata_file: "data/data_list.csv"
-  file_dir: "data/raw/files"
-  raw_pdf_file: "data/raw/files/고려대학교_차세대 포털·학사 정보시스템 구축사업.pdf"
-  pdf_pages:
-  image_dir: "outputs/images"
-  write_images: false
+  # Metadata list for multi-file RFP evaluation.
+  metadata_file: "rag_rfp_analyzer/data/data_list.csv"
+
+  # Raw source files used as a fallback when parsed markdown is unavailable.
+  file_dir: "data/raw_pdf"
+  raw_pdf_file: "data/raw_pdf/고려대학교_차세대 포털·학사 정보시스템 구축사업.pdf"
+
+  # Parsed markdown input for RAG indexing.
+  markdown_dir: "data/parsed/markdown"
+  markdown_file: "data/parsed/markdown/고려대학교_차세대 포털·학사 정보시스템 구축사업.md"
 
 preprocessing:
   chunk_size: 500
   chunk_overlap: 0
-  min_chunk_len: 10
   splitter: fixed_size
 
 embedding:
@@ -24,7 +27,6 @@ retrieval:
   vector_store: chroma
   persist_directory: "chroma_db_scenario_b"
   top_k: 3
-  sample_query: "서울캠퍼스와 세종캠퍼스의 교직원 현황 및 전임교원 수는 어떻게 되나요?"
 
 generation:
   provider: openai
@@ -32,10 +34,7 @@ generation:
   temperature: 0
 
 output:
-  chunk_results: "outputs/chunks/scenario_b_chunks.csv"
   evaluation_dir: "outputs/evaluation"
-  retrieval_eval_results: "outputs/evaluation/scenario_b_retrieval_eval_results.csv"
-  retrieval_eval_summary: "outputs/evaluation/scenario_b_retrieval_eval_summary.csv"
   generation_results: "outputs/evaluation/scenario_b_generation_results.csv"
   generation_eval_results: "outputs/evaluation/scenario_b_generation_eval_results.csv"
   generation_eval_summary: "outputs/evaluation/scenario_b_generation_eval_summary.csv"
