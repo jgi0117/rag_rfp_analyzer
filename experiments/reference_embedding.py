@@ -58,8 +58,8 @@ def load_config(config_path: str) -> dict:
     return deep_merge(base_config, experiment_config)
 
 
-parser = argparse.ArgumentParser(description="Scenario B fixed-size embedding experiment")
-parser.add_argument("--config", default="configs/experiments/fixed_b.yaml")
+parser = argparse.ArgumentParser(description="Reference embedding experiment")
+parser.add_argument("--config", default="configs/experiments/reference.yaml")
 args = parser.parse_args()
 
 config = load_config(args.config)
@@ -83,7 +83,17 @@ md_text = extract_pdf(
 
 project_name = config["project"]["target_document"]
 cleaner = RFPTextCleaner(config=config)
-chunks = cleaner.run_fixed_size_chunking(md_text, project_name=project_name)
+splitter = config["preprocessing"]["splitter"]
+
+if splitter == "fixed_size":
+    chunks = cleaner.run_fixed_size_chunking(md_text, project_name=project_name)
+elif splitter == "markdown":
+    chunks = cleaner.run_markdown_chunking(md_text, project_name=project_name)
+elif splitter == "semantic":
+    chunks = cleaner.run_semantic_chunking([md_text], project_name=project_name)
+else:
+    raise ValueError(f"Unknown splitter: {splitter}")
+
 print(f"Total chunks: {len(chunks)}")
 
 documents = [
