@@ -2,6 +2,7 @@ openai
 python-dotenv
 
 langchain
+langchain-text-splitters
 langchain-openai
 langchain-community
 
@@ -12,6 +13,7 @@ pandas
 numpy
 tqdm
 pydantic
+PyYAML
 
 pymupdf4llm
 
