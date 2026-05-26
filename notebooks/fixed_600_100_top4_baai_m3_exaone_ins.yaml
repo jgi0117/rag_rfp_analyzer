@@ -1,0 +1,32 @@
+base_config: "configs/base.yaml"
+
+preprocessing:
+  splitter: markdown
+  chunk_size: 600
+  chunk_overlap: 100
+  min_chunk_len: 10
+
+embedding:
+  provider: BAAI
+  model: bge-m3
+
+retrieval:
+  vector_store: chroma
+  top_k: 4
+  sample_query: "서울캠퍼스와 세종캠퍼스의 교직원 현황 및 전임교원 수는 어떻게 되나요?"
+  sample_document_id: korea_portal
+  persist_directory: "outputs/db/reference_fixed_600_100_top4_openai_small_multidoc5"
+
+generation:
+  provider: LGAI-EXAONE
+  model: EXAONE-3.5-7.8B-Instruct
+  temperature: 0.0
+
+output:
+  evaluation_dir: "outputs/evaluation"
+  strategy_name: "reference_fixed_600_100_top4_baai_m3_multidoc5"
+  chunk_results: "outputs/chunks/reference_fixed_600_100_top4_baai_m3_multidoc5_chunks.csv"
+  retrieval_eval_results: "outputs/evaluation/reference_fixed_600_100_top4_baai_m3_multidoc5_results.csv"
+  retrieval_eval_summary: "outputs/evaluation/reference_fixed_600_100_top4_baai_m3_multidoc5_summary.csv"
+  generation_eval_results: "outputs/evaluation/reference_fixed_600_100_top4_baai_m3_multidoc5_exaone_ins_generation_results.csv"
+  generation_eval_summary: "outputs/evaluation/reference_fixed_600_100_top4_baai_m3_multidoc5_exaone_ins_generation_summary.csv"
