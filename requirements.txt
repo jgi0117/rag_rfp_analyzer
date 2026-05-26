@@ -20,3 +20,6 @@ pymupdf4llm
 tiktoken
 
 dvc[gs]
+
+langchain-huggingface sentence-transformers
+einops
