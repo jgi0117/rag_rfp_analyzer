@@ -488,6 +488,8 @@ def summarize_by_strategy(
         "token_f1",
         "metadata_match_score",
     ])
+    if "generation_seconds" in evaluated_df.columns and "generation_seconds" not in metric_cols:
+        metric_cols.append("generation_seconds")
 
     summary = (
         evaluated_df

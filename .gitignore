@@ -8,7 +8,6 @@ venv/
 .ipynb_checkpoints/
 
 docs/
-data/
 outputs/
 outputs/db/
 outputs/chunks/
@@ -23,6 +22,15 @@ checkpoints/
 *.png
 
 wandb/
-/data
 venv/
 .venv/
+
+# Track only the baseline raw PDFs used by the bge-m3 + qwen3-8B pipeline.
+/data/*
+!/data/raw_pdf/
+/data/raw_pdf/*
+!/data/raw_pdf/고려대학교_차세대 포털·학사 정보시스템 구축사업.pdf
+!/data/raw_pdf/울산광역시_2024년 버스정보시스템 확대 구축 및 기능개선 용역.pdf
+!/data/raw_pdf/재단법인충북연구원_GIS통계 기반 재난안전데이터 분석ㆍ관리 시스템 구.pdf
+!/data/raw_pdf/서민금융진흥원_서민금융진흥원 서민금융 채팅 상담시스템 구축.pdf
+!/data/raw_pdf/대한상공회의소_기업 재생에너지 지원센터 홈페이지 개편 및 시스템 고.pdf

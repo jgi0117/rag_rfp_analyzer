@@ -325,6 +325,13 @@ def summarize_retrieval(
             "retrieved_count",
         ]
     )
+    for optional_metric_col in (
+        "embedding_build_seconds",
+        "embedding_build_seconds_per_chunk",
+    ):
+        if optional_metric_col in evaluated_df.columns and optional_metric_col not in metric_cols:
+            metric_cols.append(optional_metric_col)
+
     if group_col and group_col in evaluated_df.columns:
         return (
             evaluated_df.groupby(group_col)[metric_cols]
