@@ -13,7 +13,7 @@ embedding:
 retrieval:
   vector_store: chroma
   top_k: 4
-  sample_query: "?쒖슱罹좏띁?ㅼ? ?몄쥌罹좏띁?ㅼ쓽 援먯쭅???꾪솴 諛??꾩엫援먯썝 ?섎뒗 ?대뼸寃??섎굹??"
+  sample_query: "서울캠퍼스와 세종캠퍼스의 교직원 현황 및 전임교원 수는 어떻게 되나요?"
   sample_document_id: korea_portal
   persist_directory: "outputs/db/baseline_markdown_600_100_top4_bge-m3_qwen3-8B"
 
