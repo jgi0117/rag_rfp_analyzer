@@ -9,7 +9,6 @@ import yaml
 from dotenv import load_dotenv
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -159,6 +158,8 @@ load_dotenv()
 embedding_provider = config["embedding"]["provider"]
 
 if embedding_provider == "openai":
+    from langchain_openai import OpenAIEmbeddings
+
     if not os.environ.get("OPENAI_API_KEY"):
         raise ValueError("OPENAI_API_KEY is not set.")
     embeddings_b = OpenAIEmbeddings(model=config["embedding"]["model"])
