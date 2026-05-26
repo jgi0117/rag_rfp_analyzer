@@ -259,27 +259,20 @@ evaluated_df["retrieved_context"] = evaluated_df["retrieved_contexts"].apply(lam
 
 
 # 3. src/evaluation/generation.py 내 공통 인터페이스 호출
-judge_fn = None
-judge_model = config["generation"].get("judge_model")
-if judge_model:
-    if not os.environ.get("OPENAI_API_KEY"):
-        print(
-            "OPENAI_API_KEY is not set. "
-            "Skipping OpenAI judge and using heuristic generation metrics."
-        )
-    else:
-        from langchain_openai import ChatOpenAI
+if not os.environ.get("OPENAI_API_KEY"):
+    raise ValueError("OPENAI_API_KEY is not set. Please check your .env file.")
 
-        judge_llm = ChatOpenAI(
-            model=judge_model,
-            temperature=0.0,
-        )
+from langchain_openai import ChatOpenAI
 
-        def openai_judge_fn(prompt: str) -> str:
-            response = judge_llm.invoke(prompt)
-            return response.content if hasattr(response, "content") else str(response)
+judge_llm = ChatOpenAI(
+    model=config["generation"].get("judge_model", "gpt-4o-mini"),
+    temperature=0.0,
+)
 
-        judge_fn = openai_judge_fn
+
+def openai_judge_fn(prompt: str) -> str:
+    response = judge_llm.invoke(prompt)
+    return response.content if hasattr(response, "content") else str(response)
 
 final_generation_df = evaluate_generation_dataframe(
     evaluated_df,
@@ -287,7 +280,7 @@ final_generation_df = evaluate_generation_dataframe(
     ground_truth_col="ground_truth_answer",
     context_col="retrieved_context",
     answer_col="generated_answer",
-    judge_fn=judge_fn,
+    judge_fn=openai_judge_fn,
 )
 
 # 전략별 종합 평균 요약 계산
