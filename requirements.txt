@@ -18,3 +18,4 @@ pymupdf4llm
 tiktoken
 
 dvc[gs]
+langchain-chroma
