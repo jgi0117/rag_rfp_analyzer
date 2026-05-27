@@ -198,22 +198,17 @@ if generation_provider == "openai":
         return response.content if hasattr(response, "content") else str(response)
 
 elif generation_provider == "huggingface":
-    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+    from transformers import AutoModelForCausalLM, AutoTokenizer
     import torch
 
     model_name = config["generation"]["model"]
-    enable_thinking = config["generation"].get("enable_thinking", True)
-
     qwen_tokenizer = AutoTokenizer.from_pretrained(
         model_name,
         trust_remote_code=True,
     )
 
-    quantization_config = BitsAndBytesConfig(load_in_4bit=True)
-
     qwen_model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        quantization_config=quantization_config,  # torch_dtype 대신
         device_map="auto",
         trust_remote_code=True,
     )
@@ -224,7 +219,6 @@ elif generation_provider == "huggingface":
             messages,
             tokenize=False,
             add_generation_prompt=True,
-            enable_thinking=enable_thinking,
         )
 
         inputs = qwen_tokenizer(
