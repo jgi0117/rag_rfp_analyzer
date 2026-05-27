@@ -19,7 +19,7 @@ retrieval:
 generation:
   provider: huggingface
   model: Qwen/Qwen3-8B
-  enable_thinking: True
+  enable_thinking: False
   temperature: 0.0
   max_new_tokens: 512
   judge_model: gpt-4o-mini
