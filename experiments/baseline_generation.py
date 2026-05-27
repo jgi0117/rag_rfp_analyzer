@@ -29,6 +29,20 @@ def resolve_project_path(path_value: str) -> str:
     return os.path.join(project_root_dir, path_value)
 
 
+def get_persist_directory(config: dict) -> str:
+    persist_directory = config.get("retrieval", {}).get("persist_directory")
+    if persist_directory:
+        return resolve_project_path(persist_directory)
+    return resolve_project_path(os.path.join("outputs", "db", config["output"]["strategy_name"]))
+
+
+def resolve_output_path(config: dict, key: str) -> str:
+    path_value = config["output"][key].format(
+        strategy_name=config["output"]["strategy_name"]
+    )
+    return resolve_project_path(path_value)
+
+
 def deep_merge(base: dict, override: dict) -> dict:
     merged = dict(base)
     for key, value in override.items():
@@ -69,9 +83,10 @@ parser.add_argument("--config", default="configs/experiments/bge-m3_qwen3-8B.yam
 args = parser.parse_args()
 
 config = load_config(args.config)
+persist_db_b = get_persist_directory(config)
 print(
     "config loaded "
-    f"(db: {config['retrieval']['persist_directory']}, "
+    f"(db: {persist_db_b}, "
     f"embedding: {config['embedding']['model']}, "
     f"generation: {config['generation']['model']})"
 )
@@ -98,7 +113,6 @@ elif embedding_provider == "huggingface":
 else:
     raise ValueError(f"Unknown embedding provider: {embedding_provider}")
 
-persist_db_b = resolve_project_path(config["retrieval"]["persist_directory"])
 if not os.path.exists(persist_db_b):
     raise FileNotFoundError(
         f"Chroma DB directory not found: {persist_db_b}\n"
@@ -294,12 +308,8 @@ final_generation_df = evaluate_generation_dataframe(
 generation_summary_df = summarize_by_strategy(final_generation_df, strategy_col="strategy")
 
 # 4. 최종 결과물 로컬 디렉토리 저장
-generation_output_path = resolve_project_path(
-    config["output"]["generation_eval_results"]
-)
-generation_summary_path = resolve_project_path(
-    config["output"]["generation_eval_summary"]
-)
+generation_output_path = resolve_output_path(config, "generation_eval_results")
+generation_summary_path = resolve_output_path(config, "generation_eval_summary")
 
 os.makedirs(os.path.dirname(generation_output_path), exist_ok=True)
 final_generation_df.to_csv(generation_output_path, index=False, encoding="utf-8-sig")

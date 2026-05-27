@@ -15,20 +15,19 @@ retrieval:
   top_k: 4
   sample_query: "서울캠퍼스와 세종캠퍼스의 교직원 현황 및 전임교원 수는 어떻게 되나요?"
   sample_document_id: korea_portal
-  persist_directory: "outputs/db/baseline_markdown_600_100_top4_bge-m3_qwen3-8B"
 
 generation:
   provider: huggingface
-  model: Qwen/Qwen3-8B
+  model: Qwen/Qwen3-14B
   temperature: 0.0
   max_new_tokens: 512
   judge_model: gpt-4o-mini
 
 output:
   evaluation_dir: "outputs/evaluation"
-  strategy_name: "baseline_markdown_600_100_top4_bge-m3_qwen3-8B"
-  chunk_results: "outputs/chunks/baseline_markdown_600_100_top4_bge-m3_qwen3-8B_chunks.csv"
-  retrieval_eval_results: "outputs/evaluation/baseline_markdown_600_100_top4_bge-m3_qwen3-8B_retrieval_results.csv"
-  retrieval_eval_summary: "outputs/evaluation/baseline_markdown_600_100_top4_bge-m3_qwen3-8B_retrieval_summary.csv"
-  generation_eval_results: "outputs/evaluation/baseline_markdown_600_100_top4_bge-m3_qwen3-8B_generation_results.csv"
-  generation_eval_summary: "outputs/evaluation/baseline_markdown_600_100_top4_bge-m3_qwen3-8B_generation_summary.csv"
+  strategy_name: "Qwen3-14B"
+  chunk_results: "outputs/chunks/baseline_{strategy_name}_chunks.csv"
+  retrieval_eval_results: "outputs/evaluation/baseline_{strategy_name}_retrieval_results.csv"
+  retrieval_eval_summary: "outputs/evaluation/baseline_{strategy_name}_retrieval_summary.csv"
+  generation_eval_results: "outputs/evaluation/baseline_{strategy_name}_generation_results.csv"
+  generation_eval_summary: "outputs/evaluation/baseline_{strategy_name}_generation_summary.csv"
