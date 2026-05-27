@@ -202,6 +202,7 @@ elif generation_provider == "huggingface":
     import torch
 
     model_name = config["generation"]["model"]
+    enable_thinking = config["generation"].get("enable_thinking", True)
 
     qwen_tokenizer = AutoTokenizer.from_pretrained(
         model_name,
@@ -223,6 +224,7 @@ elif generation_provider == "huggingface":
             messages,
             tokenize=False,
             add_generation_prompt=True,
+            enable_thinking=enable_thinking,
         )
 
         inputs = qwen_tokenizer(
