@@ -22,6 +22,7 @@ generation:
   model: Qwen/Qwen3-8B
   temperature: 0.0
   max_new_tokens: 512
+  judge_model: gpt-4o-mini
 
 output:
   evaluation_dir: "outputs/evaluation"
