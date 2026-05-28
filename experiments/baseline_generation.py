@@ -207,8 +207,11 @@ elif generation_provider == "huggingface":
         trust_remote_code=True,
     )
 
+    quantization_config = BitsAndBytesConfig(load_in_4bit=True)
+
     qwen_model = AutoModelForCausalLM.from_pretrained(
         model_name,
+        quantization_config=quantization_config,  # torch_dtype 대신
         device_map="auto",
         trust_remote_code=True,
     )

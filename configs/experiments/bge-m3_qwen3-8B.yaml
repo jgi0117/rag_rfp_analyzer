@@ -18,14 +18,14 @@ retrieval:
 
 generation:
   provider: huggingface
-  model: Qwen/Qwen3-8B
+  model: Qwen/Qwen3-32B
   temperature: 0.0
   max_new_tokens: 512
   judge_model: gpt-4o-mini
 
 output:
   evaluation_dir: "outputs/evaluation"
-  strategy_name: "non_4bit_quantization"
+  strategy_name: "Qwen3-32B"
   chunk_results: "outputs/chunks/baseline_{strategy_name}_chunks.csv"
   retrieval_eval_results: "outputs/evaluation/baseline_{strategy_name}_retrieval_results.csv"
   retrieval_eval_summary: "outputs/evaluation/baseline_{strategy_name}_retrieval_summary.csv"
