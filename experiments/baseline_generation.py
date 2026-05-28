@@ -9,6 +9,7 @@ import yaml
 from dotenv import load_dotenv
 from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 project_root_dir = os.path.abspath(os.path.join(current_file_dir, ".."))
