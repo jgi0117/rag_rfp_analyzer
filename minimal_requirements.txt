@@ -1,0 +1,16 @@
+pandas
+pyyaml
+python-dotenv
+langchain-community
+langchain-core
+langchain-huggingface
+langchain-openai
+chromadb
+transformers
+accelerate
+bitsandbytes
+torch
+sentence-transformers
+pymupdf
+pymupdf4llm
+wandb
