@@ -16,6 +16,7 @@ outputs/evaluation/
 chroma_db*/
 models/
 checkpoints/
+result_analysis/
 
 *.pt
 *.pth
