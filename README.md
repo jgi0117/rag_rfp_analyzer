@@ -65,15 +65,41 @@ RAG 기반 문서 이해 시스템을 구축하고자 합니다.
 
 ## 제공 데이터
 
-- RFP 문서 약 100개
-- PDF 형식 문서
+- RFP 문서 100개
+- PDF/HWP 형식 (PDF : 4개 / HWP : 96개)
 - 문서별 메타데이터 포함
 
-## 예상 문서 정보
+## 메타데이터 정보
 
-- 과업 범위
-- 사업 예산
-- 수행 일정
-- 제출 조건
-- 평가 기준
-- 요구 기술 사항
+| 컬럼명 | 타입 | 설명 |
+|--------|------|------|
+| 공고 번호 | str | 입찰 공고 식별자 |
+| 공고 차수 | float64 | 공고 회차 |
+| 사업명 | str | RFP 사업명 |
+| 사업 금액 | float64 | 예산 (원 단위) |
+| 발주 기관 | str | 발주처 |
+| 공개 일자 | str | 공고 공개 일시 |
+| 입찰 참여 시작일 | str | 입찰 시작 일시 |
+| 입찰 참여 마감일 | str | 입찰 마감 일시 |
+| 사업 요약 | str | 핵심 내용 요약 (bullet) |
+| 파일형식 | str | hwp / pdf |
+| 파일명 | str | 원본 파일명 |
+| 텍스트 | str | 파일에서 추출된 텍스트 |
+
+---
+
+# 사용 모델 (시나리오 A : GCP 실행 기반)
+
+| |모델 이름|허깅페이스 URL|
+|---|---------|--------------|
+|임베딩 모델|BAAI/bge-m3|https://huggingface.co/BAAI/bge-m3|
+|LLM 모델|Qwen/Qwen3-8B|https://huggingface.co/Qwen/Qwen3-8B|
+
+---
+
+# 사용 모델 (시나리오 B : LLM API 기반)
+
+| |모델 이름|OpenAI Developers 주소|비용 (100만 토큰 당)|
+|---|---------|---------|-----|
+|임베딩 모델|OpenAI/text-embedding-3-small|https://developers.openai.com/api/docs/models/text-embedding-3-small|0.02$|
+|LLM 모델|OpenAI/GPT-5-mini|https://developers.openai.com/api/docs/models/gpt-5-mini|입력 : 0.25$, 출력 : 2$|
