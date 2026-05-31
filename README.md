@@ -90,7 +90,7 @@ RAG 기반 문서 이해 시스템을 구축하고자 합니다.
 
 # 사용 모델 (시나리오 A : GCP 실행 기반)
 
-| |모델 이름|허깅페이스 URL|
+| |모델 이름|HuggingFace URL|
 |---|---------|--------------|
 |임베딩 모델|BAAI/bge-m3|https://huggingface.co/BAAI/bge-m3|
 |LLM 모델|Qwen/Qwen3-8B|https://huggingface.co/Qwen/Qwen3-8B|
@@ -99,7 +99,13 @@ RAG 기반 문서 이해 시스템을 구축하고자 합니다.
 
 # 사용 모델 (시나리오 B : LLM API 기반)
 
-| |모델 이름|OpenAI Developers 주소|비용 (100만 토큰 당)|
+| |모델 이름|OpenAI Developers URL|비용 (100만 토큰 당)|
 |---|---------|---------|-----|
 |임베딩 모델|OpenAI/text-embedding-3-small|https://developers.openai.com/api/docs/models/text-embedding-3-small|0.02$|
 |LLM 모델|OpenAI/GPT-5-mini|https://developers.openai.com/api/docs/models/gpt-5-mini|입력 : 0.25$, 출력 : 2$|
+
+---
+
+# Vector DB
+
+두 시나리오 모두 ChromaDB 사용 (https://www.trychroma.com/products/chromadb)
