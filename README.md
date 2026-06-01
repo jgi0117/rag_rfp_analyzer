@@ -109,3 +109,15 @@ RAG 기반 문서 이해 시스템을 구축하고자 합니다.
 # Vector DB
 
 두 시나리오 모두 ChromaDB 사용 (https://www.trychroma.com/products/chromadb)
+
+---
+
+# 개인 협업일지
+
+|팀원 이름|협업일지 URL|
+|---------|------------|
+|김경제||
+|김영성|https://velog.io/@csd1345/2026-05-12-협업일지|
+|신희정||
+|엄지영||
+|황예원||
