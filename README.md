@@ -116,7 +116,7 @@ RAG 기반 문서 이해 시스템을 구축하고자 합니다.
 
 |팀원 이름|협업일지 URL|
 |---------|------------|
-|김경제||
+|김경제|https://shrub-weight-c16.notion.site/AI_9-_-_Daily_-_part_2-35f2b0aa2cb28026af57ee87c877ea57?source=copy_link|
 |김영성|https://velog.io/@csd1345/2026-05-12-협업일지|
 |신희정||
 |엄지영||
