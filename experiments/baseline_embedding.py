@@ -25,6 +25,7 @@ from src.preprocessing.loader import extract_pdf
 
 
 def resolve_project_path(path_value: str) -> str:
+    # 설정 파일의 상대 경로를 프로젝트 루트 기준 절대 경로로 변환합니다.
     path_value = os.path.expanduser(path_value)
     if os.path.isabs(path_value):
         return path_value
@@ -32,6 +33,7 @@ def resolve_project_path(path_value: str) -> str:
 
 
 def deep_merge(base: dict, override: dict) -> dict:
+    # base.yaml 값을 유지하면서 실험별 YAML 값만 재귀적으로 덮어씁니다.
     merged = dict(base)
     for key, value in override.items():
         if key == "base_config":
@@ -44,6 +46,7 @@ def deep_merge(base: dict, override: dict) -> dict:
 
 
 def load_config(config_path: str) -> dict:
+    # 실험 설정을 읽고 base_config가 있으면 공통 설정과 병합합니다.
     config_path = resolve_project_path(config_path)
     with open(config_path, "r", encoding="utf-8") as f:
         experiment_config = yaml.safe_load(f)
@@ -59,6 +62,7 @@ def load_config(config_path: str) -> dict:
 
 
 def get_document_configs(config: dict) -> list[dict]:
+    # documents가 없을 때도 단일 문서 실험이 동작하도록 기본 문서 설정을 반환합니다.
     documents = config.get("documents")
     if documents:
         return documents
@@ -74,6 +78,7 @@ def get_document_configs(config: dict) -> list[dict]:
 
 
 def resolve_document_pdf_path(config: dict, document_config: dict) -> str:
+    # 문서별 raw_pdf_file이 있으면 우선 사용하고, 없으면 file_dir과 file_name을 조합합니다.
     raw_pdf_file = document_config.get("raw_pdf_file")
     if raw_pdf_file:
         return resolve_project_path(raw_pdf_file)
@@ -87,6 +92,7 @@ def resolve_document_pdf_path(config: dict, document_config: dict) -> str:
 
 
 def run_chunking(cleaner: RFPTextCleaner, splitter: str, md_text: str, project_name: str) -> list[str]:
+    # 현재 baseline은 Markdown 기반 청킹만 지원합니다.
     if splitter == "markdown":
         return cleaner.run_markdown_chunking(md_text, project_name=project_name)
     raise ValueError("Baseline only supports markdown chunking.")
@@ -110,6 +116,7 @@ document_configs = get_document_configs(config)
 documents = []
 chunk_records = []
 
+# 각 PDF를 Markdown으로 추출한 뒤 청크와 메타데이터를 함께 누적합니다.
 for document_config in document_configs:
     document_id = document_config["document_id"]
     project_name = document_config["target_document"]
@@ -148,6 +155,7 @@ for document_config in document_configs:
 
 print(f"Total chunks: {len(documents)}")
 
+# 청킹 결과는 사람이 검토할 수 있도록 CSV로 먼저 저장합니다.
 chunk_output_path = resolve_project_path(config["output"]["chunk_results"])
 os.makedirs(os.path.dirname(chunk_output_path), exist_ok=True)
 chunk_df = pd.DataFrame(chunk_records)
@@ -157,6 +165,7 @@ print(f"Chunking result saved: {chunk_output_path}")
 load_dotenv()
 embedding_provider = config["embedding"]["provider"]
 
+# 설정된 provider에 맞춰 임베딩 모델을 초기화합니다.
 if embedding_provider == "openai":
     from langchain_openai import OpenAIEmbeddings
 
@@ -175,7 +184,8 @@ elif embedding_provider == "huggingface":
     )
 else:
     raise ValueError(f"Unknown embedding provider: {embedding_provider}")
-    
+
+# 생성된 청크를 Chroma 벡터 DB로 저장합니다.
 persist_db_b = resolve_project_path(config["retrieval"]["persist_directory"])
 
 start_db = time.time()
@@ -190,6 +200,7 @@ embedding_build_seconds_per_chunk = (
 )
 print(f"Vector DB built and saved ({embedding_build_seconds:.2f}s): {persist_db_b}")
 
+# 샘플 질문으로 벡터 검색 결과를 빠르게 확인합니다.
 query = config["retrieval"]["sample_query"]
 print(f"\n[Scenario B test] Question: '{query}'")
 sample_document_id = config["retrieval"].get("sample_document_id", document_configs[0]["document_id"])
@@ -208,6 +219,7 @@ for idx, doc in enumerate(retrieved_docs_b):
 retrieval_k = int(os.environ.get("RAG_RETRIEVAL_K", str(config["retrieval"].get("top_k", 3))))
 strategy_name = config["output"]["strategy_name"]
 
+# Ground Truth 문항별 검색 결과를 만들고 retrieval 평가 지표를 계산합니다.
 ground_truth_df = make_ground_truth_dataframe(
     [document_config["document_id"] for document_config in document_configs]
 )
@@ -255,6 +267,7 @@ summary_output_path = resolve_project_path(config["output"]["retrieval_eval_summ
 os.makedirs(os.path.dirname(retrieval_output_path), exist_ok=True)
 os.makedirs(os.path.dirname(summary_output_path), exist_ok=True)
 
+# 상세 결과와 요약 결과를 각각 저장합니다.
 evaluated_df.to_csv(retrieval_output_path, index=False, encoding="utf-8-sig")
 summary_df.to_csv(summary_output_path, index=False, encoding="utf-8-sig")
 

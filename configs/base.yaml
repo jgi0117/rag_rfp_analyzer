@@ -1,7 +1,9 @@
+# 프로젝트 기본 정보입니다. 개별 실험 설정에서 필요한 값만 덮어씁니다.
 project:
   name: rag_rfp_analyzer
   target_document: "고려대학교_차세대 포털·학사 정보시스템 구축사업"
 
+# 원천 데이터와 중간 산출물 경로입니다.
 path:
   metadata_file: "data/data_list.csv"
   file_dir: "data/raw_pdf"
@@ -10,6 +12,7 @@ path:
   image_dir: "outputs/images"
   write_images: false
 
+# 평가에 사용할 제안서 목록입니다. document_id는 검색/평가 필터의 기준값으로 사용됩니다.
 documents:
   - document_id: korea_portal
     target_document: "고려대학교_차세대 포털·학사 정보시스템 구축사업"

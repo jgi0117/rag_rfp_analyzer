@@ -23,6 +23,7 @@ from src.evaluation.retrieval import (
 
 
 def resolve_project_path(path_value: str) -> str:
+    # 설정 파일의 상대 경로를 프로젝트 루트 기준 절대 경로로 변환합니다.
     path_value = os.path.expanduser(path_value)
     if os.path.isabs(path_value):
         return path_value
@@ -30,6 +31,7 @@ def resolve_project_path(path_value: str) -> str:
 
 
 def deep_merge(base: dict, override: dict) -> dict:
+    # base.yaml 값을 유지하면서 실험별 YAML 값만 재귀적으로 덮어씁니다.
     merged = dict(base)
     for key, value in override.items():
         if key == "base_config":
@@ -42,6 +44,7 @@ def deep_merge(base: dict, override: dict) -> dict:
 
 
 def load_config(config_path: str) -> dict:
+    # 실험 설정을 읽고 base_config가 있으면 공통 설정과 병합합니다.
     config_path = resolve_project_path(config_path)
     with open(config_path, "r", encoding="utf-8") as f:
         experiment_config = yaml.safe_load(f)
@@ -57,6 +60,7 @@ def load_config(config_path: str) -> dict:
 
 
 def get_document_ids(config: dict) -> list[str]:
+    # 평가 대상 문서 ID 목록을 Ground Truth 생성 함수에 전달합니다.
     documents = config.get("documents")
     if documents:
         return [document["document_id"] for document in documents]
@@ -79,6 +83,7 @@ print(
 load_dotenv()
 embedding_provider = config["embedding"]["provider"]
 
+# embedding 단계와 동일한 임베딩 모델을 사용해 저장된 Chroma DB를 로드합니다.
 if embedding_provider == "openai":
     from langchain_openai import OpenAIEmbeddings
 
@@ -111,7 +116,7 @@ vector_db_b = Chroma(
 )
 print(f"Vector DB loaded: {persist_db_b}")
 
-# 2. Ground Truth 기반의 Retrieval 검색 데이터 수집
+# Ground Truth 기반으로 문항별 검색 결과를 수집하고 retrieval 지표를 계산합니다.
 retrieval_k = int(os.environ.get("RAG_RETRIEVAL_K", str(config["retrieval"].get("top_k", 4))))
 strategy_name = config["output"]["strategy_name"]
 
@@ -127,7 +132,7 @@ for _, row in ground_truth_df.iterrows():
         k=retrieval_k,
         filter=document_filter,
     )
-    
+
     retrieved_ranked_chunks = [
         {
             "rank": rank,
@@ -171,6 +176,7 @@ generation_seconds = []
 
 generation_provider = config["generation"]["provider"]
 
+# 설정된 provider에 맞춰 생성 모델 호출 함수를 준비합니다.
 if generation_provider == "openai":
     from langchain_openai import ChatOpenAI
 
@@ -258,7 +264,7 @@ evaluated_df["generation_seconds"] = generation_seconds
 evaluated_df["retrieved_context"] = evaluated_df["retrieved_contexts"].apply(lambda x: "\n\n".join(x))
 
 
-# 3. src/evaluation/generation.py 내 공통 인터페이스 호출
+# judge_model이 설정되어 있고 API 키가 있으면 LLM judge를 함께 사용합니다.
 judge_fn = None
 judge_model = config["generation"].get("judge_model")
 if judge_model:
@@ -281,6 +287,7 @@ if judge_model:
 
         judge_fn = openai_judge_fn
 
+# src/evaluation/generation.py의 공통 인터페이스로 생성 품질 지표를 계산합니다.
 final_generation_df = evaluate_generation_dataframe(
     evaluated_df,
     question_col="question",
@@ -293,7 +300,7 @@ final_generation_df = evaluate_generation_dataframe(
 # 전략별 종합 평균 요약 계산
 generation_summary_df = summarize_by_strategy(final_generation_df, strategy_col="strategy")
 
-# 4. 최종 결과물 로컬 디렉토리 저장
+# 최종 Generation 상세 결과와 전략별 요약 결과를 저장합니다.
 generation_output_path = resolve_project_path(
     config["output"]["generation_eval_results"]
 )
