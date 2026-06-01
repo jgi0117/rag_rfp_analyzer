@@ -31,20 +31,6 @@ def resolve_project_path(path_value: str) -> str:
     return os.path.join(project_root_dir, path_value)
 
 
-def get_persist_directory(config: dict) -> str:
-    persist_directory = config.get("retrieval", {}).get("persist_directory")
-    if persist_directory:
-        return resolve_project_path(persist_directory)
-    return resolve_project_path(os.path.join("outputs", "db", config["output"]["strategy_name"]))
-
-
-def resolve_output_path(config: dict, key: str) -> str:
-    path_value = config["output"][key].format(
-        strategy_name=config["output"]["strategy_name"]
-    )
-    return resolve_project_path(path_value)
-
-
 def deep_merge(base: dict, override: dict) -> dict:
     merged = dict(base)
     for key, value in override.items():
@@ -162,7 +148,7 @@ for document_config in document_configs:
 
 print(f"Total chunks: {len(documents)}")
 
-chunk_output_path = resolve_output_path(config, "chunk_results")
+chunk_output_path = resolve_project_path(config["output"]["chunk_results"])
 os.makedirs(os.path.dirname(chunk_output_path), exist_ok=True)
 chunk_df = pd.DataFrame(chunk_records)
 chunk_df.to_csv(chunk_output_path, index=False, encoding="utf-8-sig")
@@ -190,7 +176,7 @@ elif embedding_provider == "huggingface":
 else:
     raise ValueError(f"Unknown embedding provider: {embedding_provider}")
     
-persist_db_b = get_persist_directory(config)
+persist_db_b = resolve_project_path(config["retrieval"]["persist_directory"])
 
 start_db = time.time()
 vector_db_b = Chroma.from_documents(
@@ -264,8 +250,8 @@ retrieval_df = pd.DataFrame(retrieval_rows)
 evaluated_df = evaluate_retrieval_dataframe(retrieval_df)
 summary_df = summarize_retrieval(evaluated_df)
 
-retrieval_output_path = resolve_output_path(config, "retrieval_eval_results")
-summary_output_path = resolve_output_path(config, "retrieval_eval_summary")
+retrieval_output_path = resolve_project_path(config["output"]["retrieval_eval_results"])
+summary_output_path = resolve_project_path(config["output"]["retrieval_eval_summary"])
 os.makedirs(os.path.dirname(retrieval_output_path), exist_ok=True)
 os.makedirs(os.path.dirname(summary_output_path), exist_ok=True)
 
