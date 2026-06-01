@@ -119,5 +119,5 @@ RAG 기반 문서 이해 시스템을 구축하고자 합니다.
 |김경제|https://shrub-weight-c16.notion.site/AI_9-_-_Daily_-_part_2-35f2b0aa2cb28026af57ee87c877ea57?source=copy_link|
 |김영성|https://velog.io/@csd1345/2026-05-12-협업일지|
 |신희정|https://app.notion.com/p/AI09-35fbb18aad6580fba225fde3af002c91?source=copy_link|
-|엄지영||
+|엄지영|https://www.notion.so/Daily-1-3609cec3d60f80f2b057ffd07ced50e3?source=copy_link|
 |황예원|https://www.notion.so/26-5-12-26-6-4-35f16104cddd80b7b8dbdb3faa256718?source=copy_link|
