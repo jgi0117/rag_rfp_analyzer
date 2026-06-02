@@ -126,6 +126,14 @@ PM(Project Manager) : 일마다 돌아가면서 담당함.
 
 ---
 
+# Experiment Tracker
+https://www.notion.so/dcc2b0aa2cb28343a32b8122069644de?v=3762b0aa2cb283cab33b88c7c7a60f66&source=copy_link
+
+<img width="1421" height="763" alt="스크린샷 2026-06-02 오후 2 44 52" src="https://github.com/user-attachments/assets/2f5414ea-44bc-423e-aff9-df9a3720c327" />
+
+---
+
+
 # 개인 협업일지
 
 |팀원 이름|협업일지 URL|
