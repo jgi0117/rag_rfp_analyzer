@@ -4,6 +4,7 @@
 핵심 정보를 검색·요약·질의응답할 수 있는  
 RAG(Retrieval-Augmented Generation) 기반 문서 분석 시스템 구축 프로젝트
 
+[PDF 보고서 보기](report/1팀_프로젝트_보고서.pdf)
 ---
 
 # 프로젝트 소개
@@ -55,7 +56,21 @@ RAG 기반 문서 이해 시스템을 구축하고자 합니다.
 | Notion | 프로젝트 문서 및 일정 관리 | https://www.notion.so/b432b0aa2cb2828ba6bd016c0ba6e0e1 |
 | Figma | 시스템 구조 및 아이디어 협업 | https://www.figma.com/board/R6X9kT6zLQerI6pxw5P3ia/1%ED%8C%80?node-id=0-1&p=f&t=gW77nPC7SN8GSwhr-0 |
 | Weights & Biases (W&B) | 실험 로그 및 성능 추적 | https://wandb.ai/csd1345- |
-| DVC | 데이터 및 모델 버전 관리 | 추가 예정 |
+| DVC | 데이터 및 모델 버전 관리 | |
+
+---
+
+# 팀원 별 역할
+
+|팀원 이름|역할|
+|---------|-----|
+|김경제|Evaluation 담당 (팀장)|
+|김영성|Data 담당|
+|신희정|Retrieval 담당|
+|엄지영|Retrieval 담당|
+|황예원|Generation 담당|
+
+PM(Project Manager) : 일마다 돌아가면서 담당함.
 
 ---
 
@@ -65,15 +80,67 @@ RAG 기반 문서 이해 시스템을 구축하고자 합니다.
 
 ## 제공 데이터
 
-- RFP 문서 약 100개
-- PDF 형식 문서
+- RFP 문서 100개
+- PDF/HWP 형식 (PDF : 4개 / HWP : 96개)
 - 문서별 메타데이터 포함
 
-## 예상 문서 정보
+## 메타데이터 정보
 
-- 과업 범위
-- 사업 예산
-- 수행 일정
-- 제출 조건
-- 평가 기준
-- 요구 기술 사항
+| 컬럼명 | 타입 | 설명 |
+|--------|------|------|
+| 공고 번호 | str | 입찰 공고 식별자 |
+| 공고 차수 | float64 | 공고 회차 |
+| 사업명 | str | RFP 사업명 |
+| 사업 금액 | float64 | 예산 (원 단위) |
+| 발주 기관 | str | 발주처 |
+| 공개 일자 | str | 공고 공개 일시 |
+| 입찰 참여 시작일 | str | 입찰 시작 일시 |
+| 입찰 참여 마감일 | str | 입찰 마감 일시 |
+| 사업 요약 | str | 핵심 내용 요약 (bullet) |
+| 파일형식 | str | hwp / pdf |
+| 파일명 | str | 원본 파일명 |
+| 텍스트 | str | 파일에서 추출된 텍스트 |
+
+---
+
+# 사용 모델 (시나리오 A : GCP 실행 기반)
+
+| |모델 이름|HuggingFace URL|
+|---|---------|--------------|
+|임베딩 모델|BAAI/bge-m3|https://huggingface.co/BAAI/bge-m3|
+|LLM 모델|Qwen/Qwen3-8B|https://huggingface.co/Qwen/Qwen3-8B|
+
+---
+
+# 사용 모델 (시나리오 B : LLM API 기반)
+
+| |모델 이름|OpenAI Developers URL|비용 (100만 토큰 당)|
+|---|---------|---------|-----|
+|임베딩 모델|OpenAI/text-embedding-3-small|https://developers.openai.com/api/docs/models/text-embedding-3-small|0.02$|
+|LLM 모델|OpenAI/GPT-5-mini|https://developers.openai.com/api/docs/models/gpt-5-mini|입력 : 0.25$, 출력 : 2$|
+
+---
+
+# Vector DB
+
+두 시나리오 모두 ChromaDB 사용 (https://www.trychroma.com/products/chromadb)
+
+---
+
+# Experiment Tracker
+https://www.notion.so/dcc2b0aa2cb28343a32b8122069644de?v=3762b0aa2cb283cab33b88c7c7a60f66&source=copy_link
+
+<img width="1421" height="763" alt="스크린샷 2026-06-02 오후 2 44 52" src="https://github.com/user-attachments/assets/2f5414ea-44bc-423e-aff9-df9a3720c327" />
+
+---
+
+
+# 개인 협업일지
+
+|팀원 이름|협업일지 URL|
+|---------|------------|
+|김경제|https://shrub-weight-c16.notion.site/AI_9-_-_Daily_-_part_2-35f2b0aa2cb28026af57ee87c877ea57?source=copy_link|
+|김영성|https://velog.io/@csd1345/2026-05-12-협업일지|
+|신희정|https://app.notion.com/p/AI09-35fbb18aad6580fba225fde3af002c91?source=copy_link|
+|엄지영|https://www.notion.so/Daily-1-3609cec3d60f80f2b057ffd07ced50e3?source=copy_link|
+|황예원|https://www.notion.so/26-5-12-26-6-4-35f16104cddd80b7b8dbdb3faa256718?source=copy_link|
