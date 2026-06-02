@@ -1,0 +1,40 @@
+# 프로젝트 기본 정보입니다. 개별 실험 설정에서 필요한 값만 덮어씁니다.
+project:
+  name: rag_rfp_analyzer
+  target_document: "고려대학교_차세대 포털·학사 정보시스템 구축사업"
+
+# 원천 데이터와 중간 산출물 경로입니다.
+path:
+  metadata_file: "data/data_list.csv"
+  file_dir: "data/raw_pdf"
+  raw_pdf_file: "data/raw_pdf/고려대학교_차세대 포털·학사 정보시스템 구축사업.pdf"
+  pdf_pages:
+  image_dir: "outputs/images"
+  write_images: false
+
+# 평가에 사용할 제안서 목록입니다. document_id는 검색/평가 필터의 기준값으로 사용됩니다.
+documents:
+  - document_id: korea_portal
+    target_document: "고려대학교_차세대 포털·학사 정보시스템 구축사업"
+    file_name: "고려대학교_차세대 포털·학사 정보시스템 구축사업.pdf"
+    pdf_pages:
+
+  - document_id: ulsan_bis_2024
+    target_document: "울산광역시_2024년 버스정보시스템 확대 구축 및 기능개선 용역"
+    file_name: "울산광역시_2024년 버스정보시스템 확대 구축 및 기능개선 용역.pdf"
+    pdf_pages:
+
+  - document_id: chungbuk_gis_disaster_2025
+    target_document: "재단법인충북연구원_GIS통계 기반 재난안전데이터 분석ㆍ관리 시스템 구축"
+    file_name: "재단법인충북연구원_GIS통계 기반 재난안전데이터 분석ㆍ관리 시스템 구.pdf"
+    pdf_pages:
+
+  - document_id: kinfa_chat_consulting_2024
+    target_document: "서민금융진흥원_서민금융진흥원 서민금융 채팅 상담시스템 구축"
+    file_name: "서민금융진흥원_서민금융진흥원 서민금융 채팅 상담시스템 구축.pdf"
+    pdf_pages:
+
+  - document_id: kcci_renewable_center_2024
+    target_document: "대한상공회의소_기업 재생에너지 지원센터 홈페이지 개편 및 시스템 고도화"
+    file_name: "대한상공회의소_기업 재생에너지 지원센터 홈페이지 개편 및 시스템 고.pdf"
+    pdf_pages:

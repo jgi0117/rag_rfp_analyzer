@@ -4,16 +4,26 @@ __pycache__/
 .env
 venv/
 .venv/
+venv/
 .ipynb_checkpoints/
 
+docs/
 data/
 outputs/
+outputs/db/
+outputs/chunks/
+outputs/evaluation/
+chroma_db*/
 models/
 checkpoints/
+result_analysis/
 
 *.pt
 *.pth
 *.ckpt
+*.png
 
 wandb/
-/data
+venv/
+.venv/
+

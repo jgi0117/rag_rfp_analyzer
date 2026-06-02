@@ -2,6 +2,7 @@ openai
 python-dotenv
 
 langchain
+langchain-text-splitters
 langchain-openai
 langchain-community
 
@@ -12,15 +13,14 @@ pandas
 numpy
 tqdm
 pydantic
+PyYAML
 
-pymupdf
-pypdf
-pdfplumber
-unstructured
+pymupdf4llm
 
 tiktoken
-streamlit
 
-ragas
-datasets
-evaluate
+dvc[gs]
+
+langchain-huggingface
+sentence-transformers
+einops

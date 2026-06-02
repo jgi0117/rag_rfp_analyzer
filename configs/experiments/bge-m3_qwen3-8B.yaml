@@ -1,0 +1,39 @@
+base_config: "configs/base.yaml"
+
+# 전처리 설정: PDF에서 추출한 Markdown 텍스트를 청크로 나누는 기준입니다.
+preprocessing:
+  splitter: markdown
+  chunk_size: 900
+  chunk_overlap: 270
+  min_chunk_len: 10
+
+# 임베딩 모델 설정: 검색용 벡터를 만들 때 사용하는 모델입니다.
+embedding:
+  provider: huggingface
+  model: BAAI/bge-m3
+
+# 검색 설정: Chroma 벡터 DB 저장 위치와 검색 개수를 정의합니다.
+retrieval:
+  vector_store: chroma
+  top_k: 10
+  sample_query: "서울캠퍼스와 세종캠퍼스의 교직원 현황 및 전임교원 수는 어떻게 되나요?"
+  sample_document_id: korea_portal
+  persist_directory: "outputs/db/bge-m3_qwen3-8b_chunk900_overlap270_top10"
+
+# 생성 모델 설정: 검색된 문맥을 바탕으로 답변을 생성하고 평가할 때 사용합니다.
+generation:
+  provider: huggingface
+  model: Qwen/Qwen3-8B
+  temperature: 0.0
+  max_new_tokens: 256
+  judge_model: gpt-4o-mini
+
+# 결과 저장 경로: 같은 실험 slug를 사용해 산출물을 한곳에서 추적하기 쉽게 맞춥니다.
+output:
+  evaluation_dir: "outputs/evaluation"
+  strategy_name: "bge-m3_qwen3-8b_chunk900_overlap270_top10"
+  chunk_results: "outputs/chunks/bge-m3_qwen3-8b_chunk900_overlap270_top10_chunks.csv"
+  retrieval_eval_results: "outputs/evaluation/bge-m3_qwen3-8b_chunk900_overlap270_top10_retrieval_results.csv"
+  retrieval_eval_summary: "outputs/evaluation/bge-m3_qwen3-8b_chunk900_overlap270_top10_retrieval_summary.csv"
+  generation_eval_results: "outputs/evaluation/bge-m3_qwen3-8b_chunk900_overlap270_top10_generation_results.csv"
+  generation_eval_summary: "outputs/evaluation/bge-m3_qwen3-8b_chunk900_overlap270_top10_generation_summary.csv"
